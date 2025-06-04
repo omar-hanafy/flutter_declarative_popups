@@ -2,43 +2,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/cupertino.dart';
 
-/// A page that creates a Cupertino-style modal popup route.
+/// A page that creates a Cupertino-style dialog route.
 ///
 /// This page can be used with Navigator 2.0 (declarative API) to show
-/// modal popups that slide up from the bottom of the screen, similar
-/// to [showCupertinoModalPopup].
+/// iOS-style dialogs, similar to [showCupertinoDialog].
 ///
 /// {@tool snippet}
-/// This example shows how to use [CupertinoModalPopupPage] with Navigator 2.0:
+/// This example shows how to use [CupertinoDialogPage] with Navigator 2.0:
 ///
 /// ```dart
 /// Navigator(
 ///   pages: [
 ///     MaterialPage(child: HomeScreen()),
-///     if (showActionSheet)
-///       CupertinoModalPopupPage<String>(
-///         key: ValueKey('action-sheet'),
-///         builder: (context) => CupertinoActionSheet(
-///           title: Text('Select Option'),
+///     if (showDialog)
+///       CupertinoDialogPage<bool>(
+///         key: ValueKey('confirm-dialog'),
+///         builder: (context) => CupertinoAlertDialog(
+///           title: Text('Delete Item'),
+///           content: Text('Are you sure you want to delete this item?'),
 ///           actions: [
-///             CupertinoActionSheetAction(
-///               onPressed: () => Navigator.pop(context, 'delete'),
+///             CupertinoDialogAction(
+///               onPressed: () => Navigator.pop(context, false),
+///               child: Text('Cancel'),
+///             ),
+///             CupertinoDialogAction(
+///               onPressed: () => Navigator.pop(context, true),
 ///               isDestructiveAction: true,
 ///               child: Text('Delete'),
 ///             ),
-///             CupertinoActionSheetAction(
-///               onPressed: () => Navigator.pop(context, 'save'),
-///               child: Text('Save'),
-///             ),
 ///           ],
-///           cancelButton: CupertinoActionSheetAction(
-///             onPressed: () => Navigator.pop(context),
-///             child: Text('Cancel'),
-///           ),
 ///         ),
 ///       ),
 ///   ],
@@ -53,22 +47,22 @@ import 'package:flutter/cupertino.dart';
 ///
 /// See also:
 ///
-///  * [CupertinoModalPopupRoute], which is the route this page creates.
-///  * [showCupertinoModalPopup], which is the imperative API equivalent.
-///  * [CupertinoActionSheet], which is typically used as the child widget.
-class CupertinoModalPopupPage<T> extends Page<T> {
-  /// Creates a page that shows a modal iOS-style popup.
+///  * [CupertinoDialogRoute], which is the route this page creates.
+///  * [showCupertinoDialog], which is the imperative API equivalent.
+///  * [CupertinoAlertDialog], which is typically used as the child widget.
+class CupertinoDialogPage<T> extends Page<T> {
+  /// Creates a page that shows an iOS-style dialog.
   ///
   /// The [builder] argument must not be null.
-  const CupertinoModalPopupPage({
+  const CupertinoDialogPage({
     required this.builder,
-    this.barrierLabel = 'Dismiss',
-    this.barrierColor = kCupertinoModalBarrierColor,
     this.barrierDismissible = true,
-    this.semanticsDismissible = false,
-    this.filter,
-    this.anchorPoint,
+    this.barrierColor,
+    this.barrierLabel,
+    this.transitionDuration = const Duration(milliseconds: 250),
+    this.transitionBuilder,
     this.requestFocus,
+    this.anchorPoint,
     this.onBarrierTap,
     this.barrierOnTapHint,
     super.key,
@@ -77,62 +71,53 @@ class CupertinoModalPopupPage<T> extends Page<T> {
     super.restorationId,
   });
 
-  /// Builds the primary contents of the modal popup.
+  /// Builds the primary contents of the dialog.
   ///
-  /// The [builder] argument typically builds a [CupertinoActionSheet] widget.
+  /// The [builder] argument typically builds a [CupertinoAlertDialog] widget.
   /// Content below the widget is dimmed with a [ModalBarrier]. The widget built
   /// by the [builder] does not share a context with the route it was originally
   /// built from. Use a [StatefulBuilder] or a custom [StatefulWidget] if the
   /// widget needs to update dynamically.
   final WidgetBuilder builder;
 
-  /// The semantic label used for the modal barrier if it is dismissible.
-  ///
-  /// It is used by assistive technologies to announce the opening of the barrier.
-  /// Defaults to 'Dismiss'.
-  final String barrierLabel;
-
-  /// The color to use for the modal barrier.
-  ///
-  /// If this is null, the barrier will be transparent. Otherwise, the color
-  /// will be used to create a semi-transparent barrier. The opacity of the
-  /// color is animated when the route is pushed or popped.
-  ///
-  /// Defaults to [kCupertinoModalBarrierColor].
-  final Color? barrierColor;
-
   /// Whether you can dismiss this route by tapping the modal barrier.
   ///
-  /// When this is set to true, tapping outside the popup will cause the
+  /// When this is set to true, tapping outside the dialog will cause the
   /// current route to be popped with null as the value.
   ///
   /// Defaults to true.
   final bool barrierDismissible;
 
-  /// Whether the semantics of the modal barrier are included in the
-  /// semantics tree.
+  /// The color to use for the modal barrier.
   ///
-  /// By default, modal barriers are excluded from the semantics tree since
-  /// they are not interactive. However, when [barrierDismissible] is true,
-  /// the modal barrier becomes interactive and should be included in the
-  /// semantics tree.
-  ///
-  /// Defaults to false.
-  final bool semanticsDismissible;
+  /// If this is null, the barrier will use the default iOS modal barrier color
+  /// resolved from [kCupertinoModalBarrierColor] using [CupertinoDynamicColor.resolve].
+  final Color? barrierColor;
 
-  /// The [ImageFilter] to apply to the modal barrier.
+  /// The semantic label used for the modal barrier if it is dismissible.
   ///
-  /// If this is not null, the modal barrier will be blurred by the given
-  /// image filter. This allows for effects like frosted glass.
-  final ImageFilter? filter;
+  /// If this is null, the default label from [CupertinoLocalizations.modalBarrierDismissLabel]
+  /// will be used.
+  final String? barrierLabel;
 
-  /// {@macro flutter.widgets.DisplayFeatureSubScreen.anchorPoint}
-  final Offset? anchorPoint;
+  /// The duration of the transition animation.
+  ///
+  /// This transition duration was eyeballed comparing with iOS.
+  /// Defaults to 250 milliseconds.
+  final Duration transitionDuration;
+
+  /// Custom transition builder for the dialog animation.
+  ///
+  /// If null, the default iOS-style fade and scale animation will be used.
+  final RouteTransitionsBuilder? transitionBuilder;
 
   /// Whether the route should request focus when pushed.
   ///
   /// {@macro flutter.widgets.navigator.requestFocus}
   final bool? requestFocus;
+
+  /// {@macro flutter.widgets.DisplayFeatureSubScreen.anchorPoint}
+  final Offset? anchorPoint;
 
   /// Called when the barrier is tapped and [barrierDismissible] is true.
   ///
@@ -154,48 +139,51 @@ class CupertinoModalPopupPage<T> extends Page<T> {
   Route<T> createRoute(BuildContext context) {
     // If custom barrier handling is provided, use our custom route
     if (onBarrierTap != null || barrierOnTapHint != null) {
-      return _CustomCupertinoModalPopupRoute<T>(
+      return _CustomCupertinoDialogRoute<T>(
         builder: builder,
+        context: context,
         settings: this,
-        barrierLabel: barrierLabel,
-        barrierColor: barrierColor,
         barrierDismissible: barrierDismissible,
-        semanticsDismissible: semanticsDismissible,
-        filter: filter,
-        anchorPoint: anchorPoint,
+        barrierColor: barrierColor,
+        barrierLabel: barrierLabel,
+        transitionDuration: transitionDuration,
+        transitionBuilder: transitionBuilder,
         requestFocus: requestFocus,
+        anchorPoint: anchorPoint,
         onBarrierTap: onBarrierTap,
         barrierOnTapHint: barrierOnTapHint,
       );
     }
 
     // Otherwise use the standard route
-    return CupertinoModalPopupRoute<T>(
+    return CupertinoDialogRoute<T>(
       builder: builder,
+      context: context,
       settings: this,
-      barrierLabel: barrierLabel,
-      barrierColor: barrierColor,
       barrierDismissible: barrierDismissible,
-      semanticsDismissible: semanticsDismissible,
-      filter: filter,
-      anchorPoint: anchorPoint,
+      barrierColor: barrierColor,
+      barrierLabel: barrierLabel,
+      transitionDuration: transitionDuration,
+      transitionBuilder: transitionBuilder,
       requestFocus: requestFocus,
+      anchorPoint: anchorPoint,
     );
   }
 }
 
-/// Custom [CupertinoModalPopupRoute] that supports additional barrier customization.
-class _CustomCupertinoModalPopupRoute<T> extends CupertinoModalPopupRoute<T> {
-  _CustomCupertinoModalPopupRoute({
+/// Custom [CupertinoDialogRoute] that supports additional barrier customization.
+class _CustomCupertinoDialogRoute<T> extends CupertinoDialogRoute<T> {
+  _CustomCupertinoDialogRoute({
     required super.builder,
-    required super.barrierLabel,
-    super.barrierColor,
+    required super.context,
     super.barrierDismissible,
-    super.semanticsDismissible,
-    super.filter,
+    super.barrierColor,
+    super.barrierLabel,
+    super.transitionDuration,
+    super.transitionBuilder,
     super.settings,
-    super.anchorPoint,
     super.requestFocus,
+    super.anchorPoint,
     this.onBarrierTap,
     this.barrierOnTapHint,
   });
@@ -264,10 +252,10 @@ class _CustomCupertinoModalPopupRoute<T> extends CupertinoModalPopupRoute<T> {
 
 // Example usage and additional utilities
 
-/// A convenience widget that shows a modal popup using [CupertinoModalPopupPage].
+/// A convenience widget that shows a dialog using [CupertinoDialogPage].
 ///
-/// This is a declarative wrapper around [CupertinoModalPopupPage] that can be
-/// used in widget trees where you want to conditionally show a modal popup.
+/// This is a declarative wrapper around [CupertinoDialogPage] that can be
+/// used in widget trees where you want to conditionally show a dialog.
 ///
 /// {@tool snippet}
 /// ```dart
@@ -277,7 +265,8 @@ class _CustomCupertinoModalPopupRoute<T> extends CupertinoModalPopupRoute<T> {
 /// }
 ///
 /// class _MyWidgetState extends State<MyWidget> {
-///   bool _showModal = false;
+///   bool _showDialog = false;
+///   String? _result;
 ///
 ///   @override
 ///   Widget build(BuildContext context) {
@@ -286,25 +275,45 @@ class _CustomCupertinoModalPopupRoute<T> extends CupertinoModalPopupRoute<T> {
 ///         // Your main content
 ///         Scaffold(
 ///           body: Center(
-///             child: CupertinoButton(
-///               onPressed: () => setState(() => _showModal = true),
-///               child: Text('Show Action Sheet'),
+///             child: Column(
+///               mainAxisAlignment: MainAxisAlignment.center,
+///               children: [
+///                 CupertinoButton(
+///                   onPressed: () => setState(() => _showDialog = true),
+///                   child: Text('Show Alert'),
+///                 ),
+///                 if (_result != null)
+///                   Text('Result: $_result'),
+///               ],
 ///             ),
 ///           ),
 ///         ),
-///         // Modal popup overlay
-///         if (_showModal)
-///           CupertinoModalPopupOverlay(
-///             onDismiss: () => setState(() => _showModal = false),
-///             builder: (context) => CupertinoActionSheet(
-///               title: Text('Options'),
+///         // Dialog overlay
+///         if (_showDialog)
+///           CupertinoDialogOverlay(
+///             onDismiss: () => setState(() => _showDialog = false),
+///             builder: (context) => CupertinoAlertDialog(
+///               title: Text('Alert'),
+///               content: Text('This is an iOS-style alert dialog.'),
 ///               actions: [
-///                 CupertinoActionSheetAction(
+///                 CupertinoDialogAction(
 ///                   onPressed: () {
-///                     setState(() => _showModal = false);
-///                     // Handle action
+///                     setState(() {
+///                       _showDialog = false;
+///                       _result = 'Cancelled';
+///                     });
 ///                   },
-///                   child: Text('Option 1'),
+///                   child: Text('Cancel'),
+///                 ),
+///                 CupertinoDialogAction(
+///                   onPressed: () {
+///                     setState(() {
+///                       _showDialog = false;
+///                       _result = 'Confirmed';
+///                     });
+///                   },
+///                   isDefaultAction: true,
+///                   child: Text('OK'),
 ///                 ),
 ///               ],
 ///             ),
@@ -315,31 +324,34 @@ class _CustomCupertinoModalPopupRoute<T> extends CupertinoModalPopupRoute<T> {
 /// }
 /// ```
 /// {@end-tool}
-class CupertinoModalPopupOverlay extends StatelessWidget {
-  const CupertinoModalPopupOverlay({
+class CupertinoDialogOverlay extends StatelessWidget {
+  const CupertinoDialogOverlay({
     super.key,
     required this.builder,
     required this.onDismiss,
-    this.barrierColor = kCupertinoModalBarrierColor,
+    this.barrierColor,
     this.barrierDismissible = true,
-    this.filter,
+    this.transitionDuration = const Duration(milliseconds: 250),
+    this.transitionBuilder,
   });
 
   final WidgetBuilder builder;
   final VoidCallback onDismiss;
   final Color? barrierColor;
   final bool barrierDismissible;
-  final ImageFilter? filter;
+  final Duration transitionDuration;
+  final RouteTransitionsBuilder? transitionBuilder;
 
   @override
   Widget build(BuildContext context) {
     return Navigator(
       onGenerateRoute: (settings) {
-        return CupertinoModalPopupPage<void>(
+        return CupertinoDialogPage<void>(
           builder: builder,
           barrierColor: barrierColor,
           barrierDismissible: barrierDismissible,
-          filter: filter,
+          transitionDuration: transitionDuration,
+          transitionBuilder: transitionBuilder,
           onBarrierTap: barrierDismissible ? onDismiss : null,
         ).createRoute(context);
       },

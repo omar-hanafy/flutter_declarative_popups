@@ -1,6 +1,15 @@
 # Changelog
 
-## [0.1.0] - 2024-01-01
+## [0.2.0] - 2025-06-04
+
+- Added **CupertinoDialogPage** - Declarative alternative to `showCupertinoDialog`
+  - Full iOS-style dialog support with fade and scale animations
+  - Custom barrier tap handling with `onBarrierTap` callback
+  - Semantic hints for accessibility with `barrierOnTapHint`
+  - Customizable transition duration and animations
+  - Complete integration with Navigator 2.0
+
+## [0.1.0] - 2025-06-04
 
 ### Initial Release
 - **Material Design Pages**

@@ -7,6 +7,7 @@
 library;
 
 // Cupertino (iOS-style) pages
+export 'src/cupertino/cupertino_dialog_page.dart';
 export 'src/cupertino/cupertino_modal_popup_page.dart';
 export 'src/cupertino/cupertino_sheet_page.dart';
 // Material Design pages

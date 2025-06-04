@@ -1,10 +1,16 @@
+// Copyright (c) 2025. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_declarative_popups/src/material/dialog_page.dart';
-import 'package:flutter_declarative_popups/src/material/modal_bottom_sheet_page.dart';
+import 'package:flutter_declarative_popups/src/cupertino/cupertino_dialog_page.dart';
 import 'package:flutter_declarative_popups/src/cupertino/cupertino_modal_popup_page.dart';
 import 'package:flutter_declarative_popups/src/cupertino/cupertino_sheet_page.dart';
+import 'package:flutter_declarative_popups/src/material/dialog_page.dart';
+import 'package:flutter_declarative_popups/src/material/modal_bottom_sheet_page.dart';
 import 'package:flutter_declarative_popups/src/raw/raw_dialog_page.dart';
 
 /// Extension methods for convenient navigation with declarative popup pages.
@@ -32,6 +38,13 @@ extension DeclarativePopupNavigation on NavigatorState {
   ///
   /// This is a convenience method that creates the route automatically.
   Future<T?> pushCupertinoModalPopupPage<T>(CupertinoModalPopupPage<T> page) {
+    return push<T>(page.createRoute(context));
+  }
+
+  /// Push a [CupertinoDialogPage] onto the navigator.
+  ///
+  /// This is a convenience method that creates the route automatically.
+  Future<T?> pushCupertinoDialogPage<T>(CupertinoDialogPage<T> page) {
     return push<T>(page.createRoute(context));
   }
 
@@ -289,6 +302,61 @@ extension DeclarativePopupNavigation on NavigatorState {
     return push<T>(page.createRoute(context));
   }
 
+  /// Shows a Cupertino-style dialog by creating and pushing a [CupertinoDialogPage].
+  ///
+  /// This method provides a declarative alternative to [showCupertinoDialog]
+  /// that works with Navigator 2.0.
+  ///
+  /// Example:
+  /// ```dart
+  /// final result = await Navigator.of(context).showDeclarativeCupertinoDialog<bool>(
+  ///   builder: (context) => CupertinoAlertDialog(
+  ///     title: Text('Delete Item'),
+  ///     content: Text('Are you sure you want to delete this item?'),
+  ///     actions: [
+  ///       CupertinoDialogAction(
+  ///         onPressed: () => Navigator.pop(context, false),
+  ///         child: Text('Cancel'),
+  ///       ),
+  ///       CupertinoDialogAction(
+  ///         onPressed: () => Navigator.pop(context, true),
+  ///         isDestructiveAction: true,
+  ///         child: Text('Delete'),
+  ///       ),
+  ///     ],
+  ///   ),
+  /// );
+  /// ```
+  Future<T?> showDeclarativeCupertinoDialog<T>({
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+    Color? barrierColor,
+    String? barrierLabel,
+    Duration transitionDuration = const Duration(milliseconds: 250),
+    RouteTransitionsBuilder? transitionBuilder,
+    bool? requestFocus,
+    Offset? anchorPoint,
+    VoidCallback? onBarrierTap,
+    String? barrierOnTapHint,
+    String? restorationId,
+  }) {
+    final page = CupertinoDialogPage<T>(
+      builder: builder,
+      barrierDismissible: barrierDismissible,
+      barrierColor: barrierColor,
+      barrierLabel: barrierLabel,
+      transitionDuration: transitionDuration,
+      transitionBuilder: transitionBuilder,
+      requestFocus: requestFocus,
+      anchorPoint: anchorPoint,
+      onBarrierTap: onBarrierTap,
+      barrierOnTapHint: barrierOnTapHint,
+      restorationId: restorationId,
+    );
+
+    return push<T>(page.createRoute(context));
+  }
+
   /// Shows a Cupertino-style sheet by creating and pushing a [CupertinoSheetPage].
   ///
   /// This method provides a declarative alternative for iOS-style sheet presentations.
@@ -465,6 +533,43 @@ extension DeclarativePopupBuilders on BuildContext {
       constraints: constraints,
       requestFocus: requestFocus,
       onBarrierTap: onBarrierTap,
+      key: key,
+      name: name,
+      arguments: arguments,
+      restorationId: restorationId,
+    );
+  }
+
+  /// Creates a [CupertinoDialogPage] without pushing it.
+  ///
+  /// Useful for declarative navigation where you manage the pages list yourself.
+  CupertinoDialogPage<T> createCupertinoDialogPage<T>({
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+    Color? barrierColor,
+    String? barrierLabel,
+    Duration transitionDuration = const Duration(milliseconds: 250),
+    RouteTransitionsBuilder? transitionBuilder,
+    bool? requestFocus,
+    Offset? anchorPoint,
+    VoidCallback? onBarrierTap,
+    String? barrierOnTapHint,
+    LocalKey? key,
+    String? name,
+    Object? arguments,
+    String? restorationId,
+  }) {
+    return CupertinoDialogPage<T>(
+      builder: builder,
+      barrierDismissible: barrierDismissible,
+      barrierColor: barrierColor,
+      barrierLabel: barrierLabel,
+      transitionDuration: transitionDuration,
+      transitionBuilder: transitionBuilder,
+      requestFocus: requestFocus,
+      anchorPoint: anchorPoint,
+      onBarrierTap: onBarrierTap,
+      barrierOnTapHint: barrierOnTapHint,
       key: key,
       name: name,
       arguments: arguments,
