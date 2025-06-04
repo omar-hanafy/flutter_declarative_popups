@@ -166,6 +166,7 @@ context.go('/confirmExit');
 ```
 
 You can swap `DialogPage` for `ModalBottomSheetPage`, `CupertinoModalPopupPage`, or any other popup page—the pattern stays identical.
+
 ---
 
 
