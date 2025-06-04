@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Script to create labels for flutter_declarative_popups repository
+# Run this once to pre-create all labels
+
+echo "This script will help you create labels for your repository."
+echo "You'll need to run this with the GitHub CLI (gh) installed."
+echo ""
+echo "Install GitHub CLI: https://cli.github.com/"
+echo ""
+echo "Once installed, run: gh auth login"
+echo ""
+echo "Then run the following commands:"
+echo ""
+echo "# Size labels"
+echo "gh label create 'size/XS' --color '3CBF00' --description 'Less than 10 lines changed'"
+echo "gh label create 'size/S' --color '5D9801' --description '10-30 lines changed'"
+echo "gh label create 'size/M' --color '7F7203' --description '30-100 lines changed'"
+echo "gh label create 'size/L' --color 'A14C05' --description '100-500 lines changed'"
+echo "gh label create 'size/XL' --color 'C32607' --description 'More than 500 lines changed'"
+echo ""
+echo "# Component labels (from labeler.yml)"
+echo "gh label create 'documentation' --color '0075ca' --description 'Documentation changes'"
+echo "gh label create 'example' --color 'd876e3' --description 'Example app changes'"
+echo "gh label create 'test' --color 'a2eeef' --description 'Test changes'"
+echo "gh label create 'ci' --color '0366d6' --description 'CI/CD changes'"
+echo "gh label create 'material' --color 'e99695' --description 'Material design components'"
+echo "gh label create 'cupertino' --color 'f9d0c4' --description 'Cupertino (iOS) components'"
+echo "gh label create 'core' --color 'fef2c0' --description 'Core functionality'"
+echo "gh label create 'dependencies' --color 'c5def5' --description 'Dependency updates'"
