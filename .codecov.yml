@@ -1,0 +1,31 @@
+# Codecov configuration for flutter_declarative_popups
+
+coverage:
+  status:
+    project:
+      default:
+        # Adjust target and threshold as needed
+        target: 80%           # Overall project coverage target
+        threshold: 1%         # Allow 1% drop in coverage
+
+comment:
+  layout: "reach,diff,flags,tree,betaprofiling"
+  behavior: default
+  require_changes: false      # Comment even if no coverage change
+
+# Ignore files that don't need coverage
+ignore:
+  - "example/**/*"           # Example app
+  - "test/**/*"              # Test files themselves
+  - "**/*.g.dart"            # Generated files
+  - "**/*.freezed.dart"      # Generated freezed files
+  - "**/generated/**/*"      # Any generated code
+
+# Flutter/Dart specific settings
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      method: false
+      macro: false
