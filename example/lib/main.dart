@@ -84,7 +84,8 @@ class _HomePageState extends State<HomePage> {
                               builder: (context) => AlertDialog(
                                 title: const Text('Extension Method Dialog'),
                                 content: const Text(
-                                  'This dialog was shown using the showDeclarativeDialog extension method',
+                                  'This dialog was shown using the '
+                                  'showDeclarativeDialog extension method',
                                 ),
                                 actions: [
                                   TextButton(
@@ -127,7 +128,8 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(height: 16),
                                     const Text(
-                                      'Created with showDeclarativeModalBottomSheet',
+                                      'Created with '
+                                      'showDeclarativeModalBottomSheet',
                                     ),
                                     const SizedBox(height: 24),
                                     ElevatedButton(
@@ -173,7 +175,8 @@ class _HomePageState extends State<HomePage> {
                                       const Expanded(
                                         child: Center(
                                           child: Text(
-                                            'Created with showCupertinoSheet extension',
+                                            'Created with '
+                                            'showCupertinoSheet extension',
                                           ),
                                         ),
                                       ),
@@ -250,7 +253,10 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ]),
                   const SizedBox(height: 16),
-                  _buildSection(context, 'Page Builders (For Declarative Nav)', [
+                  _buildSection(
+                    context,
+                    'Page Builders (For Declarative Nav)',
+                    [
                     _buildButton(
                       context,
                       'Create Dialog Page',
@@ -260,7 +266,8 @@ class _HomePageState extends State<HomePage> {
                           builder: (context) => AlertDialog(
                             title: const Text('Created Page'),
                             content: const Text(
-                              'This DialogPage was created using createDialogPage',
+                              'This DialogPage was created using '
+                              'createDialogPage',
                             ),
                             actions: [
                               TextButton(
@@ -387,7 +394,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'This is a modal bottom sheet created with ModalBottomSheetPage',
+                    'This is a modal bottom sheet created with '
+                    'ModalBottomSheetPage',
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -558,7 +566,8 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'This is a completely custom dialog using RawDialogPage',
+                          'This is a completely custom dialog using '
+                          'RawDialogPage',
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),

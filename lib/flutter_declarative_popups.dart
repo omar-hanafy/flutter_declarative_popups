@@ -1,8 +1,9 @@
-/// Flutter Declarative Popups - A declarative popup routes library for Flutter's Navigator 2.0
+/// Flutter Declarative Popups - A declarative popup routes library for
+/// Flutter's Navigator 2.0
 ///
-/// This library provides page-based alternatives to Flutter's imperative popup APIs,
-/// enabling seamless integration with Navigator 2.0, go_router, and other declarative
-/// navigation solutions.
+/// This library provides page-based alternatives to Flutter's imperative
+/// popup APIs, enabling seamless integration with Navigator 2.0, go_router,
+/// and other declarative navigation solutions.
 library;
 
 // Cupertino (iOS-style) pages
