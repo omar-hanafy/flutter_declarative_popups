@@ -286,8 +286,8 @@ void main() {
                         title: const Text('Extension Test'),
                         actions: [
                           CupertinoDialogAction(
-                            onPressed: () =>
-                                Navigator.pop(context, 'cupertino_extension_result'),
+                            onPressed: () => Navigator.pop(
+                                context, 'cupertino_extension_result'),
                             child: const Text('OK'),
                           ),
                         ],

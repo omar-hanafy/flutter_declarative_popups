@@ -89,7 +89,8 @@ void main() {
       expect(result, 'sheet_result');
     });
 
-    testWidgets('showDeclarativeCupertinoDialog works correctly', (tester) async {
+    testWidgets('showDeclarativeCupertinoDialog works correctly',
+        (tester) async {
       String? result;
 
       await tester.pumpWidget(
@@ -110,8 +111,7 @@ void main() {
                           child: const Text('Cancel'),
                         ),
                         CupertinoDialogAction(
-                          onPressed: () =>
-                              Navigator.pop(context, 'ok_result'),
+                          onPressed: () => Navigator.pop(context, 'ok_result'),
                           isDefaultAction: true,
                           child: const Text('OK'),
                         ),
@@ -250,7 +250,8 @@ void main() {
               expect(page, isA<CupertinoDialogPage<String>>());
               expect(page.builder, isNotNull);
               expect(page.barrierDismissible, false);
-              expect(page.transitionDuration, const Duration(milliseconds: 300));
+              expect(
+                  page.transitionDuration, const Duration(milliseconds: 300));
 
               return const Scaffold(body: Text('Test'));
             },
