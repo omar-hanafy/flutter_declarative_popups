@@ -40,7 +40,6 @@ jobs:
         run: |
           cd example
           flutter build apk --debug
-          flutter build ios --debug --no-codesign
 
   coverage:
     runs-on: ubuntu-latest
