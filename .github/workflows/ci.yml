@@ -7,9 +7,10 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  analyze:
+    name: Analyze
     runs-on: ubuntu-latest
-
+    
     steps:
       - uses: actions/checkout@v4
 
@@ -30,21 +31,68 @@ jobs:
       - name: Analyze code
         run: flutter analyze
 
-      - name: Run tests
-        run: flutter test
-
       - name: Check publish readiness
         run: flutter pub publish --dry-run
 
-      - name: Build example app
-        run: |
-          cd example
-          flutter build apk --debug
-
-  coverage:
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    needs: analyze
+    
+    strategy:
+      matrix:
+        flutter-version: ['3.32.1', '3.34.0']
+    
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: |
+          flutter pub get
+          cd example && flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Run tests with coverage
+        if: matrix.flutter-version == '3.32.1'
+        run: flutter test --coverage
+
+      - name: Upload coverage to Codecov
+        if: matrix.flutter-version == '3.32.1'
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage/lcov.info
+          fail_ci_if_error: true
+
+  build-example:
+    name: Build Example App
+    runs-on: ${{ matrix.os }}
+    needs: analyze
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            build-cmd: 'cd example && flutter build apk --debug'
+            artifact-name: 'apk'
+            artifact-path: 'example/build/app/outputs/flutter-apk/app-debug.apk'
+          - os: macos-latest
+            build-cmd: 'cd example && flutter build ios --debug --simulator'
+            artifact-name: 'ios'
+            artifact-path: 'example/build/ios/iphonesimulator/Runner.app'
+          - os: windows-latest
+            build-cmd: 'cd example && flutter build windows --debug'
+            artifact-name: 'windows'
+            artifact-path: 'example/build/windows/x64/runner/Debug'
+    
     steps:
       - uses: actions/checkout@v4
 
@@ -55,12 +103,26 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
+          cd example && flutter pub get
 
-      - name: Run tests with coverage
-        run: flutter test --coverage
+      - name: Build example app
+        run: ${{ matrix.build-cmd }}
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          file: coverage/lcov.info
+          name: ${{ matrix.artifact-name }}-debug
+          path: ${{ matrix.artifact-path }}
+          retention-days: 5
+
+  # Final job to ensure all checks passed
+  all-checks-passed:
+    name: All Checks Passed
+    runs-on: ubuntu-latest
+    needs: [analyze, test, build-example]
+    
+    steps:
+      - name: All checks passed
+        run: echo "All CI checks passed successfully!"

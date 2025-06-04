@@ -194,6 +194,16 @@ All popup types offer comprehensive customization including:
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
 
+### Quick Start
+1. Fork and clone the repository
+2. Create a feature branch: `git checkout -b feat/amazing-feature`
+3. Commit changes: `git commit -m 'feat: add amazing feature'`
+4. Push and create a PR
+
+For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+For repository setup and CI/CD configuration, see [SETUP.md](SETUP.md).
+
 ## License
 
 This project is licensed under the BSD 3-Clause License. See the LICENSE file for details.

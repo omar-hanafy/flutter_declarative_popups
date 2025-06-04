@@ -1,0 +1,39 @@
+# Configuration for PR labeler
+# https://github.com/actions/labeler
+
+# Add 'documentation' label to any change in docs or markdown files
+documentation:
+  - '**/*.md'
+  - 'doc/**/*'
+
+# Add 'example' label to any change in example folder
+example:
+  - 'example/**/*'
+
+# Add 'test' label to any change in test files
+test:
+  - 'test/**/*'
+  - '**/*_test.dart'
+
+# Add 'ci' label to any change in GitHub Actions workflows
+ci:
+  - '.github/**/*'
+
+# Add 'material' label to changes in material components
+material:
+  - 'lib/src/material/**/*'
+
+# Add 'cupertino' label to changes in cupertino components
+cupertino:
+  - 'lib/src/cupertino/**/*'
+
+# Add 'core' label to changes in core files
+core:
+  - 'lib/src/raw/**/*'
+  - 'lib/src/utils/**/*'
+  - 'lib/*.dart'
+
+# Add 'dependencies' label to changes in pubspec
+dependencies:
+  - 'pubspec.yaml'
+  - 'pubspec.lock'
