@@ -15,7 +15,7 @@ APIs.
 
 ```yaml
 dependencies:
-  flutter_declarative_popups: ^0.1.0
+  flutter_declarative_popups: ^0.2.0
 ```
 
 ```dart
@@ -88,6 +88,28 @@ await context.showDeclarativeModalBottomSheet<void>(
   builder: (_) => const _SettingsSheet(),
   showDragHandle: true,
   isScrollControlled: true,
+);
+```
+
+### CupertinoDialogPage
+
+```dart
+await context.showDeclarativeCupertinoDialog<bool>(
+  builder: (_) => CupertinoAlertDialog(
+    title: const Text('Delete Photo?'),
+    content: const Text('This photo will be permanently deleted.'),
+    actions: [
+      CupertinoDialogAction(
+        onPressed: () => Navigator.pop(_, false),
+        child: const Text('Cancel'),
+      ),
+      CupertinoDialogAction(
+        onPressed: () => Navigator.pop(_, true),
+        isDestructiveAction: true,
+        child: const Text('Delete'),
+      ),
+    ],
+  ),
 );
 ```
 
@@ -173,6 +195,7 @@ You can swap `DialogPage` for `ModalBottomSheetPage`, `CupertinoModalPopupPage`,
 ## Supported Popups
 
 * Cupertino (iOS-style)
+    * **CupertinoDialogPage**: Presents iOS-style dialogs with fade and scale animations.
     * **CupertinoModalPopupPage**: Presents modal popups (e.g., action sheets).
     * **CupertinoSheetPage**: Displays content as draggable sheets with iOS styling.
 * Material Design

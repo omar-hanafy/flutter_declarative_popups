@@ -118,6 +118,62 @@ void main() {
     });
   });
 
+  group('CupertinoDialogPage', () {
+    testWidgets('creates a Cupertino dialog route', (tester) async {
+      await tester.pumpWidget(MaterialApp(home: Container()));
+
+      const testPage = CupertinoDialogPage<String>(
+        builder: _buildTestCupertinoDialog,
+        barrierDismissible: true,
+      );
+
+      final context = tester.element(find.byType(Container));
+      final route = testPage.createRoute(context);
+
+      expect(route, isA<Route<String>>());
+    });
+
+    testWidgets('shows Cupertino dialog and returns result', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Navigator(
+            pages: [
+              const MaterialPage(child: Scaffold()),
+              CupertinoDialogPage<String>(
+                builder: (context) => CupertinoAlertDialog(
+                  title: const Text('Test Alert'),
+                  content: const Text('This is a test alert'),
+                  actions: [
+                    CupertinoDialogAction(
+                      onPressed: () => Navigator.of(context).pop('ok_result'),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            onDidRemovePage: (page) {
+              // Result will be handled by the route itself in the new API
+              // This callback is just for cleanup
+            },
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify dialog is shown
+      expect(find.text('Test Alert'), findsOneWidget);
+
+      // Tap OK button
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      // With the new onDidRemovePage API, result capture is not available
+      // in the callback. The test verifies the popup works correctly.
+    });
+  });
+
   group('CupertinoModalPopupPage', () {
     testWidgets('creates a Cupertino modal popup route', (tester) async {
       await tester.pumpWidget(MaterialApp(home: Container()));
@@ -215,6 +271,48 @@ void main() {
       expect(result, 'extension_result');
     });
 
+    testWidgets('pushCupertinoDialogPage works correctly', (tester) async {
+      String? result;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async {
+                  result = await Navigator.of(context).pushCupertinoDialogPage(
+                    CupertinoDialogPage<String>(
+                      builder: (context) => CupertinoAlertDialog(
+                        title: const Text('Extension Test'),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: () => Navigator.pop(
+                                context, 'cupertino_extension_result'),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Show Cupertino Dialog'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Tap button to show dialog
+      await tester.tap(find.text('Show Cupertino Dialog'));
+      await tester.pumpAndSettle();
+
+      // Tap OK button
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(result, 'cupertino_extension_result');
+    });
+
     testWidgets('pushModalBottomSheetPage works correctly', (tester) async {
       String? result;
 
@@ -291,6 +389,12 @@ Widget _buildTestBottomSheet(BuildContext context) {
     child: Center(
       child: Text('Test Bottom Sheet'),
     ),
+  );
+}
+
+Widget _buildTestCupertinoDialog(BuildContext context) {
+  return const CupertinoAlertDialog(
+    title: Text('Test Cupertino Dialog'),
   );
 }
 

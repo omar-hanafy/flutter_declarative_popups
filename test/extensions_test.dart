@@ -89,6 +89,54 @@ void main() {
       expect(result, 'sheet_result');
     });
 
+    testWidgets('showDeclarativeCupertinoDialog works correctly',
+        (tester) async {
+      String? result;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async {
+                  result = await Navigator.of(context)
+                      .showDeclarativeCupertinoDialog<String>(
+                    builder: (context) => CupertinoAlertDialog(
+                      title: const Text('Test Dialog'),
+                      content: const Text('This is a test'),
+                      actions: [
+                        CupertinoDialogAction(
+                          onPressed: () =>
+                              Navigator.pop(context, 'cancel_result'),
+                          child: const Text('Cancel'),
+                        ),
+                        CupertinoDialogAction(
+                          onPressed: () => Navigator.pop(context, 'ok_result'),
+                          isDefaultAction: true,
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: const Text('Show Cupertino Dialog'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show Cupertino Dialog'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Test Dialog'), findsOneWidget);
+
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(result, 'ok_result');
+    });
+
     testWidgets('showCupertinoSheet works correctly', (tester) async {
       String? result;
 
@@ -185,6 +233,33 @@ void main() {
       );
     });
 
+    testWidgets('createCupertinoDialogPage creates a valid page',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final page = context.createCupertinoDialogPage<String>(
+                builder: (context) => const CupertinoAlertDialog(
+                  title: Text('Created Dialog'),
+                ),
+                barrierDismissible: false,
+                transitionDuration: const Duration(milliseconds: 300),
+              );
+
+              expect(page, isA<CupertinoDialogPage<String>>());
+              expect(page.builder, isNotNull);
+              expect(page.barrierDismissible, false);
+              expect(
+                  page.transitionDuration, const Duration(milliseconds: 300));
+
+              return const Scaffold(body: Text('Test'));
+            },
+          ),
+        ),
+      );
+    });
+
     testWidgets('createCupertinoModalPopupPage creates a valid page',
         (tester) async {
       await tester.pumpWidget(
@@ -254,6 +329,80 @@ void main() {
   });
 
   group('Integration with Declarative Navigation', () {
+    testWidgets('CupertinoDialogPage works with declarative navigation',
+        (tester) async {
+      bool showDialog = false;
+
+      // Create a stateful widget that properly manages state
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              return Navigator(
+                pages: [
+                  MaterialPage(
+                    child: Scaffold(
+                      body: Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              showDialog = true;
+                            });
+                          },
+                          child: const Text('Show Cupertino Dialog'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (showDialog)
+                    context.createCupertinoDialogPage<String>(
+                      builder: (context) => CupertinoAlertDialog(
+                        title: const Text('Declarative Cupertino Dialog'),
+                        content: const Text('This is a declarative dialog'),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: () => Navigator.pop(context),
+                            isDestructiveAction: true,
+                            child: const Text('Cancel'),
+                          ),
+                          CupertinoDialogAction(
+                            onPressed: () =>
+                                Navigator.pop(context, 'confirmed'),
+                            isDefaultAction: true,
+                            child: const Text('Confirm'),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                onDidRemovePage: (page) {
+                  setState(() {
+                    showDialog = false;
+                  });
+                },
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('Show Cupertino Dialog'), findsOneWidget);
+      expect(find.text('Declarative Cupertino Dialog'), findsNothing);
+
+      // Tap button to show dialog
+      await tester.tap(find.text('Show Cupertino Dialog'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Declarative Cupertino Dialog'), findsOneWidget);
+
+      // Tap Confirm to close dialog
+      await tester.tap(find.text('Confirm'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Declarative Cupertino Dialog'), findsNothing);
+      expect(find.text('Show Cupertino Dialog'), findsOneWidget);
+    });
+
     testWidgets('pages created with extensions work in Navigator pages list',
         (tester) async {
       bool showDialog = false;
