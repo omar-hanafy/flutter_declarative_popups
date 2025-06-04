@@ -79,6 +79,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write  # Required to create/manage labels
     
     steps:
       - uses: actions/labeler@v4
@@ -92,6 +93,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write  # Required to create/manage labels
     
     steps:
       - uses: actions/checkout@v4
