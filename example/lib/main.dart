@@ -81,27 +81,27 @@ class _HomePageState extends State<HomePage> {
                       () async {
                         final result = await Navigator.of(context)
                             .showDeclarativeDialog<String>(
-                              builder: (context) => AlertDialog(
-                                title: const Text('Extension Method Dialog'),
-                                content: const Text(
-                                  'This dialog was shown using the '
-                                  'showDeclarativeDialog extension method',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop('Cancelled'),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  FilledButton(
-                                    onPressed: () => Navigator.of(
-                                      context,
-                                    ).pop('Confirmed via Extension'),
-                                    child: const Text('Confirm'),
-                                  ),
-                                ],
+                          builder: (context) => AlertDialog(
+                            title: const Text('Extension Method Dialog'),
+                            content: const Text(
+                              'This dialog was shown using the '
+                              'showDeclarativeDialog extension method',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop('Cancelled'),
+                                child: const Text('Cancel'),
                               ),
-                            );
+                              FilledButton(
+                                onPressed: () => Navigator.of(
+                                  context,
+                                ).pop('Confirmed via Extension'),
+                                child: const Text('Confirm'),
+                              ),
+                            ],
+                          ),
+                        );
                         if (result != null) {
                           setState(() => _lastResult = result);
                         }
@@ -114,35 +114,35 @@ class _HomePageState extends State<HomePage> {
                       () async {
                         final result = await Navigator.of(context)
                             .showDeclarativeModalBottomSheet<String>(
-                              builder: (context) => Container(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text(
-                                      'Extension Method Bottom Sheet',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'Created with '
-                                      'showDeclarativeModalBottomSheet',
-                                    ),
-                                    const SizedBox(height: 24),
-                                    ElevatedButton(
-                                      onPressed: () => Navigator.of(
-                                        context,
-                                      ).pop('Sheet Extension Result'),
-                                      child: const Text('Close'),
-                                    ),
-                                  ],
+                          builder: (context) => Container(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Extension Method Bottom Sheet',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              showDragHandle: true,
-                            );
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Created with '
+                                  'showDeclarativeModalBottomSheet',
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.of(
+                                    context,
+                                  ).pop('Sheet Extension Result'),
+                                  child: const Text('Close'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          showDragHandle: true,
+                        );
                         if (result != null) {
                           setState(() => _lastResult = result);
                         }
@@ -155,37 +155,37 @@ class _HomePageState extends State<HomePage> {
                       () async {
                         final result = await Navigator.of(context)
                             .showCupertinoSheet<String>(
-                              builder: (context) => Container(
-                                color: CupertinoColors.systemBackground,
-                                child: SafeArea(
-                                  child: Column(
-                                    children: [
-                                      CupertinoNavigationBar(
-                                        middle: const Text(
-                                          'Extension Cupertino Sheet',
-                                        ),
-                                        trailing: CupertinoButton(
-                                          padding: EdgeInsets.zero,
-                                          child: const Text('Done'),
-                                          onPressed: () => Navigator.of(
-                                            context,
-                                          ).pop('Cupertino Extension Done'),
-                                        ),
-                                      ),
-                                      const Expanded(
-                                        child: Center(
-                                          child: Text(
-                                            'Created with '
-                                            'showCupertinoSheet extension',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                          builder: (context) => Container(
+                            color: CupertinoColors.systemBackground,
+                            child: SafeArea(
+                              child: Column(
+                                children: [
+                                  CupertinoNavigationBar(
+                                    middle: const Text(
+                                      'Extension Cupertino Sheet',
+                                    ),
+                                    trailing: CupertinoButton(
+                                      padding: EdgeInsets.zero,
+                                      child: const Text('Done'),
+                                      onPressed: () => Navigator.of(
+                                        context,
+                                      ).pop('Cupertino Extension Done'),
+                                    ),
                                   ),
-                                ),
+                                  const Expanded(
+                                    child: Center(
+                                      child: Text(
+                                        'Created with '
+                                        'showCupertinoSheet extension',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              showDragHandle: true,
-                            );
+                            ),
+                          ),
+                          showDragHandle: true,
+                        );
                         if (result != null) {
                           setState(() => _lastResult = result);
                         }
@@ -254,9 +254,7 @@ class _HomePageState extends State<HomePage> {
                   ]),
                   const SizedBox(height: 16),
                   _buildSection(
-                    context,
-                    'Page Builders (For Declarative Nav)',
-                    [
+                      context, 'Page Builders (For Declarative Nav)', [
                     _buildButton(
                       context,
                       'Create Dialog Page',
@@ -297,53 +295,53 @@ class _HomePageState extends State<HomePage> {
                         final page = context.createRawDialogPage<String>(
                           pageBuilder:
                               (context, animation, secondaryAnimation) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: Center(
-                                    child: Container(
-                                      margin: const EdgeInsets.all(20),
-                                      padding: const EdgeInsets.all(20),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surface,
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.2,
-                                            ),
-                                            blurRadius: 10,
-                                          ),
-                                        ],
+                            return FadeTransition(
+                              opacity: animation,
+                              child: Center(
+                                child: Container(
+                                  margin: const EdgeInsets.all(20),
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        blurRadius: 10,
                                       ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text(
-                                            'Raw Dialog Page',
-                                            style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          const Text(
-                                            'Created with createRawDialogPage',
-                                          ),
-                                          const SizedBox(height: 24),
-                                          ElevatedButton(
-                                            onPressed: () => Navigator.of(
-                                              context,
-                                            ).pop('Raw Page Result'),
-                                            child: const Text('Close'),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    ],
                                   ),
-                                );
-                              },
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        'Raw Dialog Page',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        'Created with createRawDialogPage',
+                                      ),
+                                      const SizedBox(height: 24),
+                                      ElevatedButton(
+                                        onPressed: () => Navigator.of(
+                                          context,
+                                        ).pop('Raw Page Result'),
+                                        child: const Text('Close'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                           barrierLabel: 'Dismiss',
                         );
                         Navigator.of(
