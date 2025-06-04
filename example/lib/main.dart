@@ -592,15 +592,10 @@ class _HomePageState extends State<HomePage> {
             builder: (context) => const NestedNavigationExample(),
           ),
       ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) return false;
+      onDidRemovePage: (page) {
         setState(() {
           _activePopup = null;
-          if (result != null) {
-            _lastResult = result.toString();
-          }
         });
-        return true;
       },
     );
   }
