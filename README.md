@@ -1,232 +1,162 @@
-# Flutter Declarative Popups
+# flutter_declarative_popups
 
-A modern, declarative approach to handling popups in Flutter using Navigator 2.0. Simplify your navigation logic,
-enhance readability, and easily manage state restoration with page-based alternatives to Flutter's imperative popup
-APIs.
+**Declarative popup routes for Navigator 2.0 & your favourite routing packages**
+Material, Cupertino, and fully‑custom pop‑ups with type‑safe results, deep‑linking, and state restoration.
 
-## Features
-* **Declarative Popups**: Seamless integration with Flutter's Navigator 2.0 and GoRouter.
-* **Multiple Popup Types**: Supports Material and Cupertino dialogs, sheets, and bottom sheets.
-* **Customizable Barrier**: Full control over barrier behavior, including dismissibility, color, and tap handling.
-* **Convenient Extensions**: Easy-to-use methods to create and push popup pages.
-* **State Restoration**: Easily restore popup states through Flutter's built-in mechanisms.
+[![Pub Version](https://img.shields.io/pub/v/flutter_declarative_popups.svg)](https://pub.dev/packages/flutter_declarative_popups) 
+[![Flutter](https://img.shields.io/badge/flutter-3.26%2B-blue)](https://flutter.dev/) ![Null‑safety](https://img.shields.io/badge/null--safety-%E2%9C%93-success)
 
-## Installation
+> `flutter_declarative_popups` lets you treat pop‑ups like *pages* so they play nicely with Navigator 2.0, `go_router`, `auto_route`, and the browser URL.
+
+------
+
+## ✨ Features
+
+| ✅                              | Feature                                                                                                                       |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| Declarative `Page`subclasses   | `DialogPage`, `ModalBottomSheetPage`, `CupertinoDialogPage`, `CupertinoModalPopupPage`, `CupertinoSheetPage`, `RawDialogPage` |
+| Type‑safe result values        | `final result = await context.push<String>("/dialog");`                                                                       |
+| Deep linking & browser history | Pop‑ups get their own **URL path**                                                                                            |
+| Works everywhere               | Android • iOS • Web • macOS • Windows • Linux                                                                                 |
+| State restoration              | Reload the app and come back to the same pop‑up                                                                               |
+| Mix‑and‑match                  | Use with **Navigator 2.0**, classic **Navigator 1.0**, `go_router`, **or** `auto_route`                                       |
+
+------
+
+## 🚀 Getting started
 
 ```yaml
+# pubspec.yaml
 dependencies:
-  flutter_declarative_popups: ^0.2.0
+  flutter_declarative_popups: ^0.3.0
 ```
 
 ```dart
 import 'package:flutter_declarative_popups/flutter_declarative_popups.dart';
 ```
 
----
+------
 
-## Quick start
+## 🔹 Quick examples
 
-### 1. push imperatively—with the **extensions**
-
-```dart
-// From any BuildContext
-await context.showDeclarativeDialog<bool>(
-  builder: (_) => AlertDialog(
-    title: const Text('Delete item?'),
-    content: const Text('This action cannot be undone.'),
-    actions: [
-      TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancel')),
-      TextButton(onPressed: () => Navigator.pop(_, true),  child: const Text('Delete')),
-    ],
-  ),
-);
-```
-
-### 2. Or Add a popup page to `Navigator.pages`
+### Navigator 2.0
 
 ```dart
 Navigator(
   pages: [
-    const MaterialPage(child: HomeScreen()),
+    MaterialPage(child: HomeScreen()),
     if (showDialog)
-      DialogPage<void>(
-        key: const ValueKey('confirm-delete'),
-        builder: (context) => const _ConfirmDeleteDialog(),
+      DialogPage<String>(
+        builder: (_) => const ConfirmDeleteDialog(),
       ),
   ],
   onPopPage: (route, result) {
     if (!route.didPop(result)) return false;
-    setState(() => showDialog = false);
+    // handle `result` here
     return true;
   },
 );
 ```
 
----
-
-## API snippets
-
-### DialogPage
+### `go_router`
 
 ```dart
-await context.showDeclarativeDialog<bool>(
-  builder: (_) => AlertDialog(
-    title: const Text('Delete item?'),
-    content: const Text('This action cannot be undone.'),
-    actions: [
-      TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancel')),
-      TextButton(onPressed: () => Navigator.pop(_, true),  child: const Text('Delete')),
-    ],
+GoRoute(
+  path: 'dialog',
+  pageBuilder: (_, state) => DialogPage<String>(
+    key: state.pageKey,
+    builder: (_) => const ConfirmDeleteDialog(),
   ),
-);
+),
+final result = await context.push<String>('/dialog');
 ```
 
-### ModalBottomSheetPage
+### Classic Navigator 1.0
 
 ```dart
-await context.showDeclarativeModalBottomSheet<void>(
-  builder: (_) => const _SettingsSheet(),
-  showDragHandle: true,
-  isScrollControlled: true,
+final result = await Navigator.of(context).push<String>(
+  DialogPage<String>(builder: (_) => const ConfirmDeleteDialog())
+      .createRoute(context),
 );
 ```
 
-### CupertinoDialogPage
+More complete examples live in the **[`example/`](example/)** folder:
+
+- `navigator_2/` – hand‑rolled RouterDelegate
+- `go_router/` – v15.1.2 integration
+- `navigator_1/` – imperative push/pop
+
+------
+
+## 🧩 API overview
+
+| Class                        | Description                                                                          |
+|------------------------------|--------------------------------------------------------------------------------------|
+| `DialogPage<T>`              | Material `AlertDialog` as a page. `barrierDismissible`, `barrierColor`, transitions… |
+| `ModalBottomSheetPage<T>`    | Material sheet with drag‑handle & custom shape support                               |
+| `CupertinoDialogPage<T>`     | iOS‑style alert dialog                                                               |
+| `CupertinoModalPopupPage<T>` | iOS action sheet / picker style                                                      |
+| `CupertinoSheetPage<T>`      | iOS sheet with drag‑to‑dismiss gesture (requires root navigator)                     |
+| `RawDialogPage<T>`           | Bring‑your‑own builder for complete control                                          |
+
+All pages extend **`Page<T>`**, so they slot straight into any declarative navigator.
+
+------
+
+## 📦 Version Requirements
+
+| Package                       | Min Flutter | Min Dart | Notes                                                           |
+|-------------------------------|-------------|----------|------------------------------------------------------------------|
+| flutter_declarative_popups    | 3.26+       | 3.5+     | Uses `CupertinoSheetRoute`, barrier semantics, `AnimationStyle` |
+
+------
+
+## 🔄 State & Route Updates
+
+**Important:** Page properties are immutable once created. To update popup properties at runtime:
+- Pass a new `ValueKey` to the page when state changes
+- The framework will rebuild the route with new properties
 
 ```dart
-await context.showDeclarativeCupertinoDialog<bool>(
-  builder: (_) => CupertinoAlertDialog(
-    title: const Text('Delete Photo?'),
-    content: const Text('This photo will be permanently deleted.'),
-    actions: [
-      CupertinoDialogAction(
-        onPressed: () => Navigator.pop(_, false),
-        child: const Text('Cancel'),
-      ),
-      CupertinoDialogAction(
-        onPressed: () => Navigator.pop(_, true),
-        isDestructiveAction: true,
-        child: const Text('Delete'),
-      ),
-    ],
-  ),
-);
+DialogPage<bool>(
+  key: ValueKey('dialog_$dialogVersion'), // Change key to update
+  barrierDismissible: someCondition,
+  builder: (_) => MyDialog(),
+)
 ```
 
-### CupertinoModalPopupPage
+------
 
-```dart
-await context.pushCupertinoModalPopup<String>(
-  builder: (_) => CupertinoActionSheet(
-    title: const Text('Photo options'),
-    actions: [
-      CupertinoActionSheetAction(
-        child: const Text('Delete'),
-        isDestructiveAction: true,
-        onPressed: () => Navigator.pop(_, 'delete'),
-      ),
-      CupertinoActionSheetAction(
-        child: const Text('Share'),
-        onPressed: () => Navigator.pop(_, 'share'),
-      ),
-    ],
-    cancelButton: CupertinoActionSheetAction(
-      child: const Text('Cancel'),
-      onPressed: () => Navigator.pop(_, null),
-    ),
-  ),
-);
-```
+## 🛣️ Deep linking & state restoration
 
-### CupertinoSheetPage (with nested navigation)
+Because every pop‑up is a real page, you can:
 
-```dart
-await context.showCupertinoSheet<void>(
-  builder: (_) => const EditProfileFlow(),
-  useNestedNavigation: true,
-  showDragHandle: true,
-);
-```
+- open `/dialog` directly from a push‑notification or web link
+- use the browser back button to close the dialog
+- rely on `restorationScopeId` to survive hot‑restart & process death
 
-### RawDialogPage
+No extra work required – just include the page in your `pages:` list or router config.
 
-```dart
-await context.showRawDialog<void>(
-  pageBuilder: (context, animation, _) => FadeTransition(
-    opacity: animation,
-    child: const Center(child: _MyCustomDialog()),
-  ),
-);
-```
+------
 
+## 🗺️ Roadmap
 
-## Using with `go_router`
+- Built‑in **transition presets** (fade, scale, slide)
+- `PersistentBottomSheetPage`
+- Sheet stacking API samples
+- More samples + video walkthrough
 
-A minimalist setup that shows a dialog when the `/confirmExit` route is hit:
+------
 
-```dart
-final router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomeScreen(),
-      routes: [
-        GoRoute(
-          path: 'confirmExit',
-          pageBuilder: (context, state) => DialogPage<void>(
-            key: state.pageKey,
-            builder: (_) => const _ConfirmDeleteDialog(),
-          ),
-        ),
-      ],
-    ),
-  ],
-);
+## 🤝 Contributing
 
-// Trigger the dialog from anywhere in your app:
-context.go('/confirmExit');
-```
+1. Fork the repo & create a branch
+2. `dart format . && flutter analyze`
+3. Add / update tests in `test/`
+4. Open a PR – **all welcome!**
 
-You can swap `DialogPage` for `ModalBottomSheetPage`, `CupertinoModalPopupPage`, or any other popup page—the pattern stays identical.
+------
 
----
+## 📄 License
 
-
-## Supported Popups
-
-* Cupertino (iOS-style)
-    * **CupertinoDialogPage**: Presents iOS-style dialogs with fade and scale animations.
-    * **CupertinoModalPopupPage**: Presents modal popups (e.g., action sheets).
-    * **CupertinoSheetPage**: Displays content as draggable sheets with iOS styling.
-* Material Design
-    * **DialogPage**: Displays Material Design dialogs declaratively.
-    * **ModalBottomSheetPage**: Presents Material modal bottom sheets.
-* Custom/Raw Dialogs
-    * **RawDialogPage**: For complete control over dialog content and animations.
-
-## Customization
-
-All popup types offer comprehensive customization including:
-
-* Barrier appearance and behavior
-* Animation control
-* Focus handling
-* SafeArea integration
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-### Quick Start
-1. Fork and clone the repository
-2. Create a feature branch: `git checkout -b feat/amazing-feature`
-3. Commit changes: `git commit -m 'feat: add amazing feature'`
-4. Push and create a PR
-
-For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-For repository setup and CI/CD configuration, see [SETUP.md](SETUP.md).
-
-## License
-
-This project is licensed under the BSD 3-Clause License. See the LICENSE file for details.
+BSD 3-Clause © 2025 Omar Khaled Hanafy - see the [LICENSE](LICENSE) file for details

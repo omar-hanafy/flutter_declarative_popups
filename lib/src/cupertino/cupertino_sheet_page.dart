@@ -5,33 +5,64 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-/// A declarative page that displays its content as a Cupertino-style sheet.
+/// A declarative [Page] that shows its content inside a Cupertino‑style sheet.
 ///
-/// This page wraps Flutter's [CupertinoSheetRoute] and can be used with
-/// Navigator 2.0's declarative API or with traditional imperative navigation.
+/// ### Why this wrapper exists
+/// Flutter’s **[`CupertinoSheetRoute`][]** (added in the SDK around v3.26) is a
+/// fully‑featured iOS sheet that supports stacking, nested navigation, and a
+/// native drag‑to‑dismiss gesture.  The route, however, is **imperative‑only** –
+/// you can `Navigator.push` it, but you cannot place it directly in a
+/// Navigator 2.0 `pages:` list because a `Page` object is required there.
 ///
-/// Example:
+/// `CupertinoSheetPage` bridges that gap: it lets you use the new sheet in
+/// declarative navigation while keeping 100% of the SDK’s animation and
+/// gesture logic.
+///
+/// ### ⚠️  Drag‑to‑dismiss caveat
+/// `CupertinoSheetRoute`’s private gesture controller calls:
+///
 /// ```dart
-/// // Declarative usage with Navigator 2.0
-/// Navigator(
-///   pages: [
-///     MaterialPage(child: HomePage()),
-///     if (showSheet)
-///       CupertinoSheetPage(
-///         builder: (context) => SheetContent(),
-///         showDragHandle: true,
-///       ),
-///   ],
-///   onPopPage: (route, result) => route.didPop(result),
-/// )
-///
-/// // Imperative usage
-/// Navigator.of(context).push(
-///   CupertinoSheetPage(
-///     builder: (context) => SheetContent(),
-///   ).createRoute(context),
-/// );
+/// Navigator.of(context, rootNavigator: true).pop();
 /// ```
+///
+/// That means **the sheet will always pop the _root_ `Navigator`**.  If you push
+/// the sheet inside a *nested* navigator the drag gesture will ascend the tree
+/// and remove the entire screen.
+///
+/// **To avoid surprises:**
+/// * Push the sheet on the root navigator (`rootNavigator: true`), **or**
+/// * Drive the root navigator declaratively and add this `CupertinoSheetPage`
+///   to its `pages:` list, as shown in the example below.
+///
+/// If you really need the sheet inside a child navigator you must fork
+/// `CupertinoSheetRoute` and change that `rootNavigator: true` call.
+///
+/// ### Example (declarative)
+/// ```dart
+/// class AppRouterDelegate extends RouterDelegate<void>
+///     with ChangeNotifier, PopNavigatorRouterDelegateMixin<void> {
+///   bool _showSheet = false;
+///   // … navigatorKey etc.
+///   @override
+///   Widget build(BuildContext context) {
+///     return Navigator(
+///       pages: [
+///         MaterialPage(child: HomeScreen(onOpen: () => _showSheet = true)),
+///         if (_showSheet)
+///           CupertinoSheetPage(
+///             builder: (_) => SheetBody(onClose: () => _showSheet = false),
+///           ),
+///       ],
+///       onPopPage: (route, result) {
+///         if (route.settings is CupertinoSheetPage) _showSheet = false;
+///         return route.didPop(result);
+///       },
+///     );
+///   }
+/// }
+/// ```
+///
+/// [`CupertinoSheetRoute`]: https://api.flutter.dev/flutter/cupertino/CupertinoSheetRoute-class.html
 class CupertinoSheetPage<T> extends Page<T> {
   const CupertinoSheetPage({
     required this.builder,

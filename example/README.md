@@ -1,61 +1,64 @@
-# Flutter Declarative Popups Example
+# Flutter Declarative Popups - Routing Examples
 
-This example demonstrates how to use the `flutter_declarative_popups` package.
+This example demonstrates how to use `flutter_declarative_popups` with different routing approaches in Flutter.
 
-## Features Demonstrated
+## Features
 
-### Material Design Popups
-- **DialogPage** - Shows various dialog styles
-- **ModalBottomSheetPage** - Bottom sheets with different configurations
-- **Scrollable Bottom Sheets** - Using DraggableScrollableSheet
+The example includes implementations for:
 
-### Cupertino (iOS) Style Popups
-- **CupertinoModalPopupPage** - Action sheets and modal popups
-- **CupertinoSheetPage** - Full iOS-style sheet presentations
-
-### Custom Implementations
-- **RawDialogPage** - Completely custom popup designs
-- **Nested Navigation** - Multi-step forms within sheets
-
-### Extension Methods
-- **showDeclarativeDialog** - Imperative-style dialog showing
-- **showDeclarativeModalBottomSheet** - Imperative-style bottom sheet
-- **createDialogPage** - Creating pages for declarative navigation
+1. **Navigator 2.0** (Default) - Direct implementation using RouterDelegate and RouteInformationParser
+2. **Navigator 1.0** - Classic imperative navigation
+3. **go_router** - Official declarative routing package
+4. **auto_route** - Code generation based routing
 
 ## Running the Example
 
-1. Clone the repository
-2. Navigate to the example directory:
-   ```bash
-   cd example
-   ```
+1. First, get the dependencies:
+```bash
+flutter pub get
+```
+
+2. For auto_route, you need to run the code generator:
+```bash
+dart run build_runner build
+```
+
 3. Run the app:
-   ```bash
-   flutter run
-   ```
+```bash
+flutter run
+```
 
-## Code Structure
+## Switching Between Routing Implementations
 
-The example app demonstrates:
+Use the dropdown in the top-right corner of the app to switch between different routing implementations. The default is Navigator 2.0.
 
-1. **Declarative Navigation** - Using Navigator 2.0 with pages
-2. **Extension Methods** - Convenient ways to show popups
-3. **State Management** - Managing popup state declaratively
-4. **Result Handling** - Getting results from popups
+## Implementation Details
 
-## Key Files
+### Navigator 2.0
+- Direct implementation of `RouterDelegate` and `RouteInformationParser`
+- Full control over the navigation stack
+- Each popup has its own path (e.g., `/dialog`, `/bottom-sheet`)
 
-- `lib/main.dart` - Main example app with all demonstrations
-- Shows both declarative and imperative approaches
-- Demonstrates proper state management with popups
+### Navigator 1.0
+- Shows both traditional imperative navigation and declarative pages
+- Uses `Navigator.push()` with popup pages
+- Note: Path-based navigation is not available
 
-## Screenshots
+### go_router
+- Each popup is defined as a route with its own path
+- Supports deep linking and browser history
+- Uses `context.push()` for navigation
 
-The example app shows:
-- A home screen with buttons to trigger different popup types
-- Result display showing the last action taken
-- Various popup styles from both Material and Cupertino libraries
+### auto_route
+- Requires code generation (`@RoutePage()` annotation)
+- Type-safe navigation with generated route classes
+- Note: auto_route doesn't natively support declarative popup pages as overlays
+- This example demonstrates using imperative popups alongside auto_route's routing
 
-## Learn More
+## Popup Types Demonstrated
 
-For more information about using the package, see the [main package documentation](https://pub.dev/packages/flutter_declarative_popups).
+- **DialogPage** - Material Design dialogs
+- **ModalBottomSheetPage** - Bottom sheets with drag handle
+- **CupertinoDialogPage** - iOS-style dialogs
+
+All popups support returning results to the calling page.
