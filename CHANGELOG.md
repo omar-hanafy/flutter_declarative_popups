@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.0] - 2025-08-16
+
+- Enhanced **CupertinoSheetPage** documentation with important drag-to-dismiss behavior warnings for nested navigators.
+- Updated example app to use go_router for modern declarative navigation patterns.
+
 ## [0.2.0] - 2025-06-04
 
 - Added **CupertinoDialogPage** - Declarative alternative to `showCupertinoDialog`

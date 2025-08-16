@@ -44,6 +44,48 @@ class DialogPage<T> extends Page<T> {
     super.restorationId,
   });
 
+  /// Creates a [DialogPage] with themes captured from the given [context].
+  ///
+  /// This factory constructor automatically captures inherited themes from
+  /// the provided context and applies them to the dialog.
+  factory DialogPage.withContext({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    Offset? anchorPoint,
+    Color? barrierColor,
+    bool barrierDismissible = true,
+    String? barrierLabel,
+    bool useSafeArea = true,
+    TraversalEdgeBehavior? traversalEdgeBehavior,
+    AnimationStyle? animationStyle,
+    bool? requestFocus,
+    LocalKey? key,
+    String? name,
+    Object? arguments,
+    String? restorationId,
+  }) {
+    final themes = InheritedTheme.capture(
+      from: context,
+      to: Navigator.of(context).context,
+    );
+    return DialogPage(
+      builder: builder,
+      anchorPoint: anchorPoint,
+      barrierColor: barrierColor,
+      barrierDismissible: barrierDismissible,
+      barrierLabel: barrierLabel,
+      useSafeArea: useSafeArea,
+      themes: themes,
+      traversalEdgeBehavior: traversalEdgeBehavior,
+      animationStyle: animationStyle,
+      requestFocus: requestFocus,
+      key: key,
+      name: name,
+      arguments: arguments,
+      restorationId: restorationId,
+    );
+  }
+
   /// The widget builder that creates the dialog content
   final WidgetBuilder builder;
 
