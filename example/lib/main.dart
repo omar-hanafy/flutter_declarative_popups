@@ -18,6 +18,7 @@
 /// 4. **auto_route** - Code generation based routing
 ///    - Type-safe navigation but limited popup support
 ///    - Uses imperative popups alongside page routing
+library;
 
 import 'package:flutter/material.dart';
 
