@@ -295,7 +295,7 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     this.backgroundColor,
     this.shape,
     bool? showDragHandle,
-    double? topGapRatio,
+    this.topGapRatio,
     this.constraints,
     this.useSafeArea = false,
     // Behavior
@@ -306,13 +306,13 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     this.customBarrierColor,
     this.customBarrierDismissible,
     this.customBarrierLabel,
-  })  : _showDragHandle = showDragHandle,
-        super(topGap: topGapRatio);
+  }) : _showDragHandle = showDragHandle;
 
   // Appearance customization
   final Color? backgroundColor;
   final ShapeBorder? shape;
   final bool? _showDragHandle;
+  final double? topGapRatio;
   final BoxConstraints? constraints;
   final bool useSafeArea;
 
@@ -348,7 +348,8 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     content = _applyCustomizations(context, content);
 
     // Wrap with the standard sheet structure
-    final bottomPadding = MediaQuery.sizeOf(context).height * topGap;
+    final bottomPadding =
+        MediaQuery.sizeOf(context).height * (topGapRatio ?? 0.08);
 
     return MediaQuery.removePadding(
       context: context,
