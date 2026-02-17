@@ -45,8 +45,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          flutter pub get
-          cd example && flutter pub get
+          dart pub get
 
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
@@ -72,14 +71,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          flutter pub get
-          cd example && flutter pub get
+          dart pub get
 
       - name: Analyze
-        run: flutter analyze || echo "beta analyze reported issues (non-blocking)"
+        run: flutter analyze
 
       - name: Test
-        run: flutter test || echo "beta tests reported issues (non-blocking)"
+        run: flutter test
 
   pana:
     name: Pana
@@ -94,17 +92,14 @@ jobs:
           channel: stable
 
       - name: Install dependencies
-        run: flutter pub get
+        run: dart pub get
 
       - name: Install pana
         run: dart pub global activate pana
 
       - name: Run pana
         run: |
-          # pana currently loses documentation points on newer toolchains due
-          # dartdoc incompatibilities; use SDK dartdoc and enforce a tight
-          # threshold instead of hard full-score blocking.
-          pana --json --dartdoc-version sdk > pana.json
+          pana --json > pana.json
           python3 - <<'PY'
           import json
           with open('pana.json') as f:
@@ -114,9 +109,7 @@ jobs:
           max_points = scores.get('maxPoints', 0)
           if max_points == 0:
             raise SystemExit('pana did not report scores; failing.')
-          if granted < max_points - 10:
-            raise SystemExit(
-              f'pana score {granted}/{max_points} (requires within 10 points of max).'
-            )
+          if granted != max_points:
+            raise SystemExit(f'pana score {granted}/{max_points} (full score required).')
           print(f'pana score {granted}/{max_points}')
           PY
