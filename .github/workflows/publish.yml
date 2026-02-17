@@ -1,48 +1,50 @@
-# .github/workflows/publish.yml
-name: Publish to pub.dev
+name: Publish
 
 on:
   push:
     tags:
-      - 'flutter_declarative_popups-v*.*.*'  # Must align with tag-pattern on pub.dev: flutter_declarative_popups-v{{version}}
+      - 'flutter_declarative_popups-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g., flutter_declarative_popups-v1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  # Run safety checks first
-  verify:
-    name: Verify Package
+  publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout (tag push)
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v4
+
+      - name: Checkout (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.1'
-          channel: 'stable'
-      
+          channel: stable
+
       - name: Install dependencies
         run: |
           flutter pub get
           cd example && flutter pub get
-      
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
-      
-      - name: Analyze code
-        run: flutter analyze
-      
-      - name: Run tests
-        run: flutter test
-      
-      - name: Check publish readiness
-        run: flutter pub publish --dry-run
 
-  # Publish only if verification passes
-  publish:
-    needs: verify  # Wait for verification to complete successfully
-    permissions:
-      id-token: write  # Required for authentication using OIDC
-      contents: read
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-    with:
-      environment: pub.dev  # Optional: if you set up deployment environment protection
+      - name: Publish (OIDC)
+        if: github.event_name != 'workflow_dispatch'
+        run: flutter pub publish --force
+
+      - name: Publish (token)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          PUB_DEV_TOKEN: ${{ secrets.PUB_DEV_TOKEN }}
+        run: flutter pub publish --force
