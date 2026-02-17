@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.3] - 2026-02-17
+
+- Fixed GitHub Actions publish flow to use the official pub.dev trusted publisher OIDC workflow.
+- No public API changes.
+
 ## [0.3.2] - 2026-02-17
 
 - Maintenance release to publish through the updated GitHub release pipeline.
