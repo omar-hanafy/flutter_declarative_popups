@@ -42,6 +42,8 @@ class DialogPage<T> extends Page<T> {
     super.name,
     super.arguments,
     super.restorationId,
+    super.canPop,
+    super.onPopInvoked,
   });
 
   /// Creates a [DialogPage] with themes captured from the given [context].
@@ -59,6 +61,8 @@ class DialogPage<T> extends Page<T> {
     TraversalEdgeBehavior? traversalEdgeBehavior,
     AnimationStyle? animationStyle,
     bool? requestFocus,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T>? onPopInvoked,
     LocalKey? key,
     String? name,
     Object? arguments,
@@ -79,6 +83,8 @@ class DialogPage<T> extends Page<T> {
       traversalEdgeBehavior: traversalEdgeBehavior,
       animationStyle: animationStyle,
       requestFocus: requestFocus,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked ?? (bool didPop, T? result) {},
       key: key,
       name: name,
       arguments: arguments,

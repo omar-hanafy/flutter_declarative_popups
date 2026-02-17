@@ -42,10 +42,10 @@ import 'package:flutter/cupertino.dart';
 ///         ),
 ///       ),
 ///   ],
-///   onPopPage: (route, result) {
-///     if (!route.didPop(result)) return false;
-///     // Handle result here
-///     return true;
+///   onDidRemovePage: (page) {
+///     if (page.key == const ValueKey('action-sheet')) {
+///       // Handle removal here
+///     }
 ///   },
 /// )
 /// ```
@@ -75,6 +75,8 @@ class CupertinoModalPopupPage<T> extends Page<T> {
     super.name,
     super.arguments,
     super.restorationId,
+    super.canPop,
+    super.onPopInvoked,
   });
 
   /// Builds the primary contents of the modal popup.

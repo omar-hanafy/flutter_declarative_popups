@@ -4,7 +4,7 @@ name: Publish to pub.dev
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+*'  # Must align with tag-pattern on pub.dev: v{{version}}
+      - 'flutter_declarative_popups-v*.*.*'  # Must align with tag-pattern on pub.dev: flutter_declarative_popups-v{{version}}
 
 jobs:
   # Run safety checks first
@@ -42,7 +42,7 @@ jobs:
     needs: verify  # Wait for verification to complete successfully
     permissions:
       id-token: write  # Required for authentication using OIDC
-      contents: write  # Required for creating GitHub releases
+      contents: read
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
     with:
       environment: pub.dev  # Optional: if you set up deployment environment protection

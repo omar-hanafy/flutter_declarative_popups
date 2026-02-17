@@ -130,7 +130,7 @@ If you want to host documentation:
    ```
 
 2. **Auto-publish triggers when**:
-   - A tag matching `v*.*.*` is pushed
+   - A tag matching `flutter_declarative_popups-v*.*.*` is pushed
    - GitHub Actions will:
      - Run all tests
      - Publish to pub.dev
@@ -145,8 +145,8 @@ git checkout main
 git pull origin main
 
 # Create and push tag
-git tag v0.2.0
-git push origin v0.2.0
+git tag flutter_declarative_popups-v0.3.1
+git push origin flutter_declarative_popups-v0.3.1
 ```
 
 ## 📊 Monitoring

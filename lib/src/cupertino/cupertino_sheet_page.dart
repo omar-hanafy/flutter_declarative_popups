@@ -53,9 +53,8 @@ import 'package:flutter/material.dart';
 ///             builder: (_) => SheetBody(onClose: () => _showSheet = false),
 ///           ),
 ///       ],
-///       onPopPage: (route, result) {
-///         if (route.settings is CupertinoSheetPage) _showSheet = false;
-///         return route.didPop(result);
+///       onDidRemovePage: (page) {
+///         if (page is CupertinoSheetPage) _showSheet = false;
 ///       },
 ///     );
 ///   }
@@ -91,6 +90,8 @@ class CupertinoSheetPage<T> extends Page<T> {
     super.name,
     super.arguments,
     super.restorationId,
+    super.canPop,
+    super.onPopInvoked,
   });
 
   /// Builds the primary content of the sheet.
@@ -293,8 +294,8 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     // Appearance
     this.backgroundColor,
     this.shape,
-    this.showDragHandle,
-    this.topGapRatio,
+    bool? showDragHandle,
+    double? topGapRatio,
     this.constraints,
     this.useSafeArea = false,
     // Behavior
@@ -305,13 +306,13 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     this.customBarrierColor,
     this.customBarrierDismissible,
     this.customBarrierLabel,
-  });
+  })  : _showDragHandle = showDragHandle,
+        super(topGap: topGapRatio);
 
   // Appearance customization
   final Color? backgroundColor;
   final ShapeBorder? shape;
-  final bool? showDragHandle;
-  final double? topGapRatio;
+  final bool? _showDragHandle;
   final BoxConstraints? constraints;
   final bool useSafeArea;
 
@@ -347,8 +348,7 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     content = _applyCustomizations(context, content);
 
     // Wrap with the standard sheet structure
-    final bottomPadding =
-        MediaQuery.sizeOf(context).height * (topGapRatio ?? 0.08);
+    final bottomPadding = MediaQuery.sizeOf(context).height * topGap;
 
     return MediaQuery.removePadding(
       context: context,
@@ -397,7 +397,7 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     }
 
     // Add drag handle
-    if (showDragHandle ?? false) {
+    if (_showDragHandle ?? false) {
       content = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
