@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.2] - 2026-02-17
+
+- Maintenance release to publish through the updated GitHub release pipeline.
+- No public API changes.
+
 ## [0.3.1] - 2026-02-17
 
 - Added compatibility updates for newer Flutter SDKs:
