@@ -39,12 +39,28 @@ jobs:
           flutter pub get
           cd example && flutter pub get
 
-      - name: Publish (OIDC)
+      - name: Publish (OIDC with token fallback)
         if: github.event_name != 'workflow_dispatch'
-        run: flutter pub publish --force
+        env:
+          PUB_DEV_TOKEN: ${{ secrets.PUB_DEV_TOKEN }}
+        run: |
+          set -euo pipefail
 
-      - name: Publish (token)
+          if timeout 8m flutter pub publish --force; then
+            echo "Published with OIDC"
+            exit 0
+          fi
+
+          echo "OIDC publish failed or timed out, falling back to PUB_DEV_TOKEN"
+          dart pub token add https://pub.dev --env-var PUB_DEV_TOKEN
+          timeout 8m flutter pub publish --force
+
+      - name: Configure pub token
         if: github.event_name == 'workflow_dispatch'
         env:
           PUB_DEV_TOKEN: ${{ secrets.PUB_DEV_TOKEN }}
-        run: flutter pub publish --force
+        run: dart pub token add https://pub.dev --env-var PUB_DEV_TOKEN
+
+      - name: Publish (token)
+        if: github.event_name == 'workflow_dispatch'
+        run: timeout 8m flutter pub publish --force
