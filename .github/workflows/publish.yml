@@ -36,8 +36,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          flutter pub get
-          cd example && flutter pub get
+          dart pub get
 
       - name: Publish (OIDC)
-        run: timeout 8m dart pub publish --force
+        if: github.event_name != 'workflow_dispatch'
+        run: dart pub publish --force
+
+      - name: Publish (token)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          PUB_DEV_TOKEN: ${{ secrets.PUB_DEV_TOKEN }}
+        run: dart pub publish --force

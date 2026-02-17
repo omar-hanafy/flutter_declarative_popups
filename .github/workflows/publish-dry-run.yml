@@ -21,9 +21,7 @@ jobs:
           channel: stable
 
       - name: Install dependencies
-        run: |
-          flutter pub get
-          cd example && flutter pub get
+        run: dart pub get
 
       - name: Pub publish dry-run
-        run: flutter pub publish --dry-run
+        run: dart pub publish --dry-run
