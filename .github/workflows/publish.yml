@@ -1,49 +1,16 @@
-name: Publish
+name: Publish to pub.dev
 
 on:
   push:
     tags:
       - 'flutter_declarative_popups-v*'
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to publish (e.g., flutter_declarative_popups-v1.2.3)'
-        required: true
-        type: string
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout (tag push)
-        if: github.event_name != 'workflow_dispatch'
-        uses: actions/checkout@v4
-
-      - name: Checkout (workflow_dispatch)
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag }}
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Install dependencies
-        run: |
-          dart pub get
-
-      - name: Publish (OIDC)
-        if: github.event_name != 'workflow_dispatch'
-        run: dart pub publish --force
-
-      - name: Publish (token)
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          PUB_DEV_TOKEN: ${{ secrets.PUB_DEV_TOKEN }}
-        run: dart pub publish --force
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
