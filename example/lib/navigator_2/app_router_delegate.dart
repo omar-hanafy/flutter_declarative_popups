@@ -29,8 +29,50 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   Completer<String?> dialogCompleter = Completer();
   Completer<String?> bottomSheetCompleter = Completer();
   Completer<String?> cupertinoDialogCompleter = Completer();
+  String? _dialogResult;
+  String? _bottomSheetResult;
+  String? _cupertinoDialogResult;
 
   AppRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
+
+  void _cacheDialogResult(String? result) {
+    _dialogResult = result;
+  }
+
+  void _cacheBottomSheetResult(String? result) {
+    _bottomSheetResult = result;
+  }
+
+  void _cacheCupertinoDialogResult(String? result) {
+    _cupertinoDialogResult = result;
+  }
+
+  void _resolveDialogResult() {
+    if (dialogCompleter.isCompleted) {
+      return;
+    }
+    dialogCompleter.complete(_dialogResult);
+    _dialogResult = null;
+    dialogCompleter = Completer();
+  }
+
+  void _resolveBottomSheetResult() {
+    if (bottomSheetCompleter.isCompleted) {
+      return;
+    }
+    bottomSheetCompleter.complete(_bottomSheetResult);
+    _bottomSheetResult = null;
+    bottomSheetCompleter = Completer();
+  }
+
+  void _resolveCupertinoDialogResult() {
+    if (cupertinoDialogCompleter.isCompleted) {
+      return;
+    }
+    cupertinoDialogCompleter.complete(_cupertinoDialogResult);
+    _cupertinoDialogResult = null;
+    cupertinoDialogCompleter = Completer();
+  }
 
   @override
   AppRoutePath? get currentConfiguration {
@@ -59,41 +101,44 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
           DialogPage<String>(
             key: const ValueKey('dialog'),
             builder: (context) => const SampleDialog(),
+            onPopInvoked: (didPop, result) {
+              if (didPop) {
+                _cacheDialogResult(result);
+              }
+            },
           ),
         if (_currentRoute == AppRoute.bottomSheet)
           ModalBottomSheetPage<String>(
             key: const ValueKey('bottom-sheet'),
             builder: (context) => const SampleBottomSheet(),
             showDragHandle: true,
+            onPopInvoked: (didPop, result) {
+              if (didPop) {
+                _cacheBottomSheetResult(result);
+              }
+            },
           ),
         if (_currentRoute == AppRoute.cupertinoDialog)
           CupertinoDialogPage<String>(
             key: const ValueKey('cupertino-dialog'),
             builder: (context) => const SampleCupertinoDialog(),
+            onPopInvoked: (didPop, result) {
+              if (didPop) {
+                _cacheCupertinoDialogResult(result);
+              }
+            },
           ),
       ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) {
-          return false;
+      onDidRemovePage: (page) {
+        if (page.key == const ValueKey('dialog')) {
+          _resolveDialogResult();
+        } else if (page.key == const ValueKey('bottom-sheet')) {
+          _resolveBottomSheetResult();
+        } else if (page.key == const ValueKey('cupertino-dialog')) {
+          _resolveCupertinoDialogResult();
         }
-
-        // Handle popup results
-        if (_currentRoute == AppRoute.dialog && !dialogCompleter.isCompleted) {
-          dialogCompleter.complete(result as String?);
-          dialogCompleter = Completer(); // Reset for next use
-        } else if (_currentRoute == AppRoute.bottomSheet &&
-            !bottomSheetCompleter.isCompleted) {
-          bottomSheetCompleter.complete(result as String?);
-          bottomSheetCompleter = Completer();
-        } else if (_currentRoute == AppRoute.cupertinoDialog &&
-            !cupertinoDialogCompleter.isCompleted) {
-          cupertinoDialogCompleter.complete(result as String?);
-          cupertinoDialogCompleter = Completer();
-        }
-
         _currentRoute = AppRoute.home;
         notifyListeners();
-        return true;
       },
     );
   }
@@ -105,16 +150,19 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   }
 
   void showDialog() {
+    _dialogResult = null;
     _currentRoute = AppRoute.dialog;
     notifyListeners();
   }
 
   void showBottomSheet() {
+    _bottomSheetResult = null;
     _currentRoute = AppRoute.bottomSheet;
     notifyListeners();
   }
 
   void showCupertinoDialog() {
+    _cupertinoDialogResult = null;
     _currentRoute = AppRoute.cupertinoDialog;
     notifyListeners();
   }

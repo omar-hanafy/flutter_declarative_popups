@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1] - 2026-02-17
+
+- Added compatibility updates for newer Flutter SDKs:
+  - Updated `CupertinoSheetPage` internals to align with latest `CupertinoSheetRoute` API changes.
+  - Kept custom sheet top gap behavior wired through the SDK route API.
+- Added `Page` pop lifecycle passthrough support across popup pages via:
+  - `canPop`
+  - `onPopInvoked`
+- Migrated Navigator 2 example and docs away from deprecated `onPopPage` to `onDidRemovePage`.
+- Improved popup result handling in the Navigator 2 example using `onPopInvoked` plus route removal callbacks.
+
 ## [0.3.0] - 2025-08-16
 
 - Enhanced **CupertinoSheetPage** documentation with important drag-to-dismiss behavior warnings for nested navigators.

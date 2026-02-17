@@ -53,9 +53,8 @@ import 'package:flutter/material.dart';
 ///             builder: (_) => SheetBody(onClose: () => _showSheet = false),
 ///           ),
 ///       ],
-///       onPopPage: (route, result) {
-///         if (route.settings is CupertinoSheetPage) _showSheet = false;
-///         return route.didPop(result);
+///       onDidRemovePage: (page) {
+///         if (page is CupertinoSheetPage) _showSheet = false;
 ///       },
 ///     );
 ///   }
@@ -91,6 +90,8 @@ class CupertinoSheetPage<T> extends Page<T> {
     super.name,
     super.arguments,
     super.restorationId,
+    super.canPop,
+    super.onPopInvoked,
   });
 
   /// Builds the primary content of the sheet.
@@ -293,7 +294,7 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     // Appearance
     this.backgroundColor,
     this.shape,
-    this.showDragHandle,
+    bool? showDragHandle,
     this.topGapRatio,
     this.constraints,
     this.useSafeArea = false,
@@ -305,12 +306,12 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     this.customBarrierColor,
     this.customBarrierDismissible,
     this.customBarrierLabel,
-  });
+  }) : _showDragHandle = showDragHandle;
 
   // Appearance customization
   final Color? backgroundColor;
   final ShapeBorder? shape;
-  final bool? showDragHandle;
+  final bool? _showDragHandle;
   final double? topGapRatio;
   final BoxConstraints? constraints;
   final bool useSafeArea;
@@ -397,7 +398,7 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     }
 
     // Add drag handle
-    if (showDragHandle ?? false) {
+    if (_showDragHandle ?? false) {
       content = Column(
         mainAxisSize: MainAxisSize.min,
         children: [

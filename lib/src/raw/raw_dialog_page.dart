@@ -83,6 +83,8 @@ class RawDialogPage<T> extends Page<T> {
     super.name,
     super.arguments,
     super.restorationId,
+    super.canPop,
+    super.onPopInvoked,
   }) : assert(
           !barrierDismissible || barrierLabel != null,
           'A barrierLabel must be provided when barrierDismissible is true',

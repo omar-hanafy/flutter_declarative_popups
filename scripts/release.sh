@@ -128,7 +128,7 @@ git add pubspec.yaml CHANGELOG.md
 git commit -m "chore: bump version to $NEW_VERSION"
 
 # Create and push tag
-TAG="v$NEW_VERSION"
+TAG="flutter_declarative_popups-v$NEW_VERSION"
 echo -e "Creating tag: ${GREEN}$TAG${NC}"
 git tag -a "$TAG" -m "Release version $NEW_VERSION"
 

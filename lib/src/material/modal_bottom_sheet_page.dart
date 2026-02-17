@@ -19,10 +19,10 @@ import 'package:flutter/material.dart';
 ///         builder: (context) => MyBottomSheetContent(),
 ///       ),
 ///   ],
-///   onPopPage: (route, result) {
-///     if (!route.didPop(result)) return false;
-///     // Update your state here
-///     return true;
+///   onDidRemovePage: (page) {
+///     if (page.key == const ValueKey('bottom-sheet')) {
+///       // Update your state here
+///     }
 ///   },
 /// )
 /// ```
@@ -56,6 +56,8 @@ class ModalBottomSheetPage<T> extends Page<T> {
     super.name,
     super.arguments,
     super.restorationId,
+    super.canPop,
+    super.onPopInvoked,
   });
 
   /// Creates a modal bottom sheet page with automatically captured themes.
@@ -84,6 +86,8 @@ class ModalBottomSheetPage<T> extends Page<T> {
     BoxConstraints? constraints,
     bool? requestFocus,
     VoidCallback? onBarrierTap,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T>? onPopInvoked,
     LocalKey? key,
     String? name,
     Object? arguments,
@@ -122,6 +126,8 @@ class ModalBottomSheetPage<T> extends Page<T> {
       constraints: constraints,
       requestFocus: requestFocus,
       onBarrierTap: onBarrierTap,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked ?? (bool didPop, T? result) {},
       key: key,
       name: name,
       arguments: arguments,

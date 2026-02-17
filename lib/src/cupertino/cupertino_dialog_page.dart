@@ -36,10 +36,10 @@ import 'package:flutter/cupertino.dart';
 ///         ),
 ///       ),
 ///   ],
-///   onPopPage: (route, result) {
-///     if (!route.didPop(result)) return false;
-///     // Handle result here
-///     return true;
+///   onDidRemovePage: (page) {
+///     if (page.key == const ValueKey('confirm-dialog')) {
+///       // Handle removal here
+///     }
 ///   },
 /// )
 /// ```
@@ -69,6 +69,8 @@ class CupertinoDialogPage<T> extends Page<T> {
     super.name,
     super.arguments,
     super.restorationId,
+    super.canPop,
+    super.onPopInvoked,
   });
 
   /// Builds the primary contents of the dialog.

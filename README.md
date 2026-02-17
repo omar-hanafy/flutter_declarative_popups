@@ -28,7 +28,7 @@ Material, Cupertino, and fully‑custom pop‑ups with type‑safe results, deep
 ```yaml
 # pubspec.yaml
 dependencies:
-  flutter_declarative_popups: ^0.3.0
+  flutter_declarative_popups: ^0.3.1
 ```
 
 ```dart
@@ -47,13 +47,14 @@ Navigator(
     MaterialPage(child: HomeScreen()),
     if (showDialog)
       DialogPage<String>(
+        key: const ValueKey('confirm-dialog'),
         builder: (_) => const ConfirmDeleteDialog(),
       ),
   ],
-  onPopPage: (route, result) {
-    if (!route.didPop(result)) return false;
-    // handle `result` here
-    return true;
+  onDidRemovePage: (page) {
+    if (page.key == const ValueKey('confirm-dialog')) {
+      // handle removal here
+    }
   },
 );
 ```
