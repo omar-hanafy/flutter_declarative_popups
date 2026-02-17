@@ -1,6 +1,6 @@
 name: flutter_declarative_popups
 description: Declarative popup routes for Navigator 2.0. Material, Cupertino, and custom popup pages with type-safe navigation and state restoration.
-version: 0.3.1
+version: 0.3.2
 homepage: https://github.com/omar-hanafy/flutter_declarative_popups
 repository: https://github.com/omar-hanafy/flutter_declarative_popups
 issue_tracker: https://github.com/omar-hanafy/flutter_declarative_popups/issues
