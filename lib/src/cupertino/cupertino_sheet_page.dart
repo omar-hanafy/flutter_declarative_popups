@@ -185,8 +185,10 @@ class CupertinoSheetPage<T> extends Page<T> {
 
   /// Callback when the barrier (area outside the sheet) is tapped.
   ///
-  /// Only called if [barrierDismissible] is true. Note that by default,
-  /// iOS sheets have a transparent, non-dismissible barrier.
+  /// When provided, this callback replaces the default dismiss behavior; the
+  /// sheet will not pop unless the callback itself pops the navigator. Only
+  /// invoked when the barrier is dismissible. Note that by default, iOS
+  /// sheets have a transparent, non-dismissible barrier.
   final VoidCallback? onBarrierTap;
 
   /// Custom transition duration for the sheet animation.
@@ -375,19 +377,14 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
 
   @override
   Widget buildModalBarrier() {
-    if (onBarrierTap != null && barrierDismissible) {
-      return GestureDetector(
-        onTap: () {
-          onBarrierTap?.call();
-          if (isDismissible && barrierDismissible) {
-            navigator?.maybePop();
-          }
-        },
-        behavior: HitTestBehavior.opaque,
-        child: super.buildModalBarrier(),
-      );
+    if (onBarrierTap == null || !barrierDismissible) {
+      return super.buildModalBarrier();
     }
-    return super.buildModalBarrier();
+    return GestureDetector(
+      onTap: onBarrierTap,
+      behavior: HitTestBehavior.opaque,
+      child: super.buildModalBarrier(),
+    );
   }
 
   @override
