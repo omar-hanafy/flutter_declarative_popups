@@ -342,7 +342,7 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
 
   @override
   Widget buildContent(BuildContext context) {
-    var content = builder(context);
+    var content = builder!(context);
 
     // Apply appearance customizations
     content = _applyCustomizations(context, content);
