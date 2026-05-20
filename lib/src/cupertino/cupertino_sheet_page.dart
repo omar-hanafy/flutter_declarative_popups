@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 /// A declarative [Page] that shows its content inside a Cupertino‑style sheet.
 ///
@@ -135,10 +134,13 @@ class CupertinoSheetPage<T> extends Page<T> {
   /// Consider using [CupertinoColors] for iOS-appropriate colors.
   final Color? backgroundColor;
 
-  /// The shape of the sheet.
+  /// The shape applied to the sheet when [backgroundColor] or this property
+  /// is provided.
   ///
-  /// Defaults to rounded corners at the top (12.0 radius) to match iOS style.
-  /// Set to `RoundedRectangleBorder()` for square corners.
+  /// If null but a [backgroundColor] is supplied, defaults to top-rounded
+  /// corners (12.0 radius) to match the iOS sheet look. When both this and
+  /// [backgroundColor] are null, the SDK's native sheet styling is used and
+  /// no extra wrapper is inserted.
   final ShapeBorder? shape;
 
   /// Whether to show a drag handle at the top of the sheet.
@@ -151,10 +153,8 @@ class CupertinoSheetPage<T> extends Page<T> {
 
   /// The ratio of screen height reserved for the gap at the top.
   ///
-  /// iOS sheets don't cover the entire screen, leaving a gap at the top.
-  /// Default is 0.08 (8% of screen height), matching native iOS behavior.
-  ///
-  /// Set to 0.0 for a full-screen sheet.
+  /// If null, defers to [CupertinoSheetRoute]'s default top gap (matching
+  /// native iOS behavior). Set to 0.0 for a full-screen sheet.
   final double? topGap;
 
   /// Additional constraints to apply to the sheet.
@@ -315,13 +315,22 @@ class CupertinoSheetPage<T> extends Page<T> {
     }
 
     if (backgroundColor != null || shape != null) {
-      content = Material(
-        color:
-            backgroundColor ??
-            CupertinoColors.systemBackground.resolveFrom(context),
-        shape: shape,
-        clipBehavior: shape == null ? Clip.none : Clip.antiAlias,
-        child: content,
+      final effectiveShape =
+          shape ??
+          const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          );
+      content = DecoratedBox(
+        decoration: ShapeDecoration(
+          color:
+              backgroundColor ??
+              CupertinoColors.systemBackground.resolveFrom(context),
+          shape: effectiveShape,
+        ),
+        child: ClipPath(
+          clipper: ShapeBorderClipper(shape: effectiveShape),
+          child: content,
+        ),
       );
     }
 
