@@ -68,7 +68,6 @@ class CupertinoSheetPage<T> extends Page<T> {
     // Navigation behavior
     this.useNestedNavigation = false,
     this.nestedNavigatorKey,
-    this.onWillPop,
     // Sheet appearance
     this.backgroundColor,
     this.shape,
@@ -114,14 +113,10 @@ class CupertinoSheetPage<T> extends Page<T> {
 
   /// Optional key for the nested navigator when [useNestedNavigation] is true.
   ///
-  /// Useful for controlling the nested navigator programmatically.
+  /// Useful for controlling the nested navigator programmatically. To gate
+  /// dismissal of the sheet, use [Page.canPop] and [Page.onPopInvoked] on
+  /// the page itself.
   final GlobalKey<NavigatorState>? nestedNavigatorKey;
-
-  /// Callback to control whether the sheet can be popped.
-  ///
-  /// Only used when [useNestedNavigation] is true. Return `true` to allow
-  /// the sheet to be dismissed, `false` to prevent dismissal.
-  final Future<bool> Function()? onWillPop;
 
   /// The background color of the sheet.
   ///
@@ -233,33 +228,7 @@ class CupertinoSheetPage<T> extends Page<T> {
               return <Route<void>>[
                 CupertinoPageRoute<void>(
                   builder: (BuildContext context) {
-                    final content = _buildContent(context, scrollController);
-
-                    return PopScope(
-                      canPop: false,
-                      onPopInvokedWithResult:
-                          (bool didPop, Object? result) async {
-                            if (didPop) {
-                              return;
-                            }
-
-                            if (onWillPop != null) {
-                              final shouldPop = await onWillPop!();
-                              if (shouldPop && context.mounted) {
-                                Navigator.of(
-                                  context,
-                                  rootNavigator: true,
-                                ).pop(result);
-                              }
-                            } else {
-                              Navigator.of(
-                                context,
-                                rootNavigator: true,
-                              ).pop(result);
-                            }
-                          },
-                      child: content,
-                    );
+                    return _buildContent(context, scrollController);
                   },
                 ),
               ];
