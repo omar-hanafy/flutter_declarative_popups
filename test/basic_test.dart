@@ -260,6 +260,125 @@ void main() {
       expect(sheetRoute.settings.name, 'sheet');
       expect(sheetRoute.settings.arguments, 'details');
     });
+
+    testWidgets('plain builder path still renders the sheet content', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Builder(
+            builder: (context) => CupertinoButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  CupertinoSheetPage<void>(
+                    builder: (_) => const Text('Plain Builder Sheet'),
+                  ).createRoute(context),
+                );
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Plain Builder Sheet'), findsOneWidget);
+    });
+
+    testWidgets(
+      'wraps content in a DecoratedBox when backgroundColor is set',
+      (tester) async {
+        await tester.pumpWidget(
+          CupertinoApp(
+            home: Builder(
+              builder: (context) => CupertinoButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    CupertinoSheetPage<void>(
+                      builder: (_) => const Text('Styled Body'),
+                      backgroundColor: CupertinoColors.systemRed,
+                    ).createRoute(context),
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Styled Body'), findsOneWidget);
+
+        // _applyCustomizations wraps the sheet content in a DecoratedBox
+        // whose ShapeDecoration carries the supplied backgroundColor.
+        final decoratedBoxFinder = find.ancestor(
+          of: find.text('Styled Body'),
+          matching: find.byType(DecoratedBox),
+        );
+        expect(decoratedBoxFinder, findsWidgets);
+
+        final decoratedBox = tester.widgetList<DecoratedBox>(
+          decoratedBoxFinder,
+        );
+        final hasShapeDecorationWithColor = decoratedBox.any((box) {
+          final decoration = box.decoration;
+          return decoration is ShapeDecoration &&
+              decoration.color == CupertinoColors.systemRed;
+        });
+        expect(hasShapeDecorationWithColor, isTrue);
+      },
+    );
+
+    testWidgets(
+      'no DecoratedBox wrapper inserted when no styling is supplied',
+      (tester) async {
+        await tester.pumpWidget(
+          CupertinoApp(
+            home: Builder(
+              builder: (context) => CupertinoButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    CupertinoSheetPage<void>(
+                      builder: (_) => const Text('Unstyled Body'),
+                    ).createRoute(context),
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Unstyled Body'), findsOneWidget);
+
+        // Without backgroundColor or shape, _applyCustomizations must not
+        // insert a ShapeDecoration wrapper.
+        final decoratedBoxes = tester.widgetList<DecoratedBox>(
+          find.ancestor(
+            of: find.text('Unstyled Body'),
+            matching: find.byType(DecoratedBox),
+          ),
+        );
+        final hasShapeDecoration = decoratedBoxes.any(
+          (box) => box.decoration is ShapeDecoration,
+        );
+        expect(hasShapeDecoration, isFalse);
+      },
+    );
+
+    test('CupertinoSheetPage with no builders throws AssertionError', () {
+      expect(
+        () => CupertinoSheetPage<void>(),
+        throwsA(isA<AssertionError>()),
+      );
+    });
   });
 
   group('Extension Methods', () {
