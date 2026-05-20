@@ -97,7 +97,7 @@ More complete examples live in the **[`example/`](example/)** folder:
 | `ModalBottomSheetPage<T>`    | Material sheet with drag‑handle & custom shape support                               |
 | `CupertinoDialogPage<T>`     | iOS‑style alert dialog                                                               |
 | `CupertinoModalPopupPage<T>` | iOS action sheet / picker style                                                      |
-| `CupertinoSheetPage<T>`      | iOS sheet with native scroll-to-dismiss support (requires root navigator)            |
+| `CupertinoSheetPage<T>`      | iOS sheet with native scroll-to-dismiss (via `scrollableBuilder`) and root-navigator drag-to-dismiss |
 | `RawDialogPage<T>`           | Bring‑your‑own builder for complete control                                          |
 
 All pages extend **`Page<T>`**, so they slot straight into any declarative navigator.
@@ -109,6 +109,18 @@ All pages extend **`Page<T>`**, so they slot straight into any declarative navig
 | Package                       | Min Flutter | Min Dart | Notes                                                           |
 |-------------------------------|-------------|----------|------------------------------------------------------------------|
 | flutter_declarative_popups    | 3.44+       | 3.12+    | Uses `CupertinoSheetRoute.scrollableBuilder`, barrier semantics, `AnimationStyle` |
+
+------
+
+## ⬆️ Migrating from 0.3.x
+
+| 0.3.x | 1.0.0 |
+| --- | --- |
+| `CupertinoSheetPage.topGapRatio` | `CupertinoSheetPage.topGap` |
+| `CupertinoSheetPage(onWillPop: ...)` | `CupertinoSheetPage(canPop: false, onPopInvoked: ...)` |
+| `CupertinoSheetPage(transitionDuration / barrierColor / barrierDismissible / barrierLabel: ...)` | Wrap `CupertinoSheetRoute` directly |
+| `CupertinoDialogOverlay` / `CupertinoModalPopupOverlay` widgets | Add the matching `CupertinoDialogPage` / `CupertinoModalPopupPage` to `Navigator.pages` |
+| `onBarrierTap` previously ran alongside the default pop on the sheet | `onBarrierTap` now replaces the default pop. Pop manually if you still want dismissal. |
 
 ------
 
@@ -140,12 +152,13 @@ No extra work required – just include the page in your `pages:` list or router
 
 ------
 
-## 🗺️ Roadmap
+## 🗺️ Future ideas
 
-- Built‑in **transition presets** (fade, scale, slide)
 - `PersistentBottomSheetPage`
 - Sheet stacking API samples
-- More samples + video walkthrough
+- Built‑in transition presets
+
+If any of these would help your app, open an issue and we can scope it.
 
 ------
 
@@ -160,4 +173,4 @@ No extra work required – just include the page in your `pages:` list or router
 
 ## 📄 License
 
-BSD 3-Clause © 2025 Omar Khaled Hanafy - see the [LICENSE](LICENSE) file for details
+BSD 3-Clause © 2025-2026 Omar Khaled Hanafy - see the [LICENSE](LICENSE) file for details
