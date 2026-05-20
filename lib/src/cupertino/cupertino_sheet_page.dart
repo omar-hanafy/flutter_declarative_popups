@@ -73,9 +73,8 @@ class CupertinoSheetPage<T> extends Page<T> {
     // Sheet appearance
     this.backgroundColor,
     this.shape,
-    this.showDragHandle,
-    double? topGap,
-    @Deprecated('Use topGap instead.') double? topGapRatio,
+    this.showDragHandle = false,
+    this.topGap,
     this.constraints,
     this.useSafeArea = false,
     // Sheet behavior
@@ -97,12 +96,7 @@ class CupertinoSheetPage<T> extends Page<T> {
   }) : assert(
          builder != null || scrollableBuilder != null,
          'Either builder or scrollableBuilder must not be null.',
-       ),
-       assert(
-         topGap == null || topGapRatio == null,
-         'Use topGap or topGapRatio, not both.',
-       ),
-       topGap = topGap ?? topGapRatio;
+       );
 
   /// Builds the primary content of the sheet.
   ///
@@ -152,8 +146,8 @@ class CupertinoSheetPage<T> extends Page<T> {
   /// The handle is a small horizontal bar that provides a visual affordance
   /// for dragging. Common in iOS sheets.
   ///
-  /// Defaults to `null` (no drag handle).
-  final bool? showDragHandle;
+  /// Defaults to `false`.
+  final bool showDragHandle;
 
   /// The ratio of screen height reserved for the gap at the top.
   ///
@@ -162,10 +156,6 @@ class CupertinoSheetPage<T> extends Page<T> {
   ///
   /// Set to 0.0 for a full-screen sheet.
   final double? topGap;
-
-  /// The ratio of screen height reserved for the gap at the top.
-  @Deprecated('Use topGap instead.')
-  double? get topGapRatio => topGap;
 
   /// Additional constraints to apply to the sheet.
   ///
@@ -239,7 +229,7 @@ class CupertinoSheetPage<T> extends Page<T> {
       },
       settings: this,
       enableDrag: enableDrag,
-      showDragHandle: showDragHandle ?? false,
+      showDragHandle: showDragHandle,
       topGap: topGap,
       // Behavior
       isDismissible: isDismissible,

@@ -395,9 +395,8 @@ extension DeclarativePopupNavigation on NavigatorState {
     Future<bool> Function()? onWillPop,
     Color? backgroundColor,
     ShapeBorder? shape,
-    bool? showDragHandle,
+    bool showDragHandle = false,
     double? topGap,
-    @Deprecated('Use topGap instead.') double? topGapRatio,
     BoxConstraints? constraints,
     bool useSafeArea = false,
     bool enableDrag = true,
@@ -416,10 +415,6 @@ extension DeclarativePopupNavigation on NavigatorState {
       builder != null || scrollableBuilder != null,
       'Either builder or scrollableBuilder must not be null.',
     );
-    assert(
-      topGap == null || topGapRatio == null,
-      'Use topGap or topGapRatio, not both.',
-    );
 
     final page = CupertinoSheetPage<T>(
       builder: builder,
@@ -431,7 +426,6 @@ extension DeclarativePopupNavigation on NavigatorState {
       shape: shape,
       showDragHandle: showDragHandle,
       topGap: topGap,
-      topGapRatio: topGapRatio,
       constraints: constraints,
       useSafeArea: useSafeArea,
       enableDrag: enableDrag,
@@ -649,9 +643,8 @@ extension DeclarativePopupBuilders on BuildContext {
     Future<bool> Function()? onWillPop,
     Color? backgroundColor,
     ShapeBorder? shape,
-    bool? showDragHandle,
+    bool showDragHandle = false,
     double? topGap,
-    @Deprecated('Use topGap instead.') double? topGapRatio,
     BoxConstraints? constraints,
     bool useSafeArea = false,
     bool enableDrag = true,
@@ -670,10 +663,6 @@ extension DeclarativePopupBuilders on BuildContext {
       builder != null || scrollableBuilder != null,
       'Either builder or scrollableBuilder must not be null.',
     );
-    assert(
-      topGap == null || topGapRatio == null,
-      'Use topGap or topGapRatio, not both.',
-    );
 
     return CupertinoSheetPage<T>(
       builder: builder,
@@ -685,7 +674,6 @@ extension DeclarativePopupBuilders on BuildContext {
       shape: shape,
       showDragHandle: showDragHandle,
       topGap: topGap,
-      topGapRatio: topGapRatio,
       constraints: constraints,
       useSafeArea: useSafeArea,
       enableDrag: enableDrag,
