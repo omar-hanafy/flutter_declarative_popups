@@ -108,6 +108,18 @@ class _Navigator2HomePageState extends State<Navigator2HomePage> {
                   _handleResult(result);
                 },
               ),
+              PopupDemoButton(
+                label: 'Show Scrollable Cupertino Sheet',
+                icon: Icons.list,
+                description:
+                    'CupertinoSheetPage with scrollableBuilder for native scroll-to-dismiss',
+                onPressed: () async {
+                  widget.routerDelegate.showCupertinoScrollableSheet();
+                  final result = await widget
+                      .routerDelegate.cupertinoScrollableSheetCompleter.future;
+                  _handleResult(result);
+                },
+              ),
             ],
           ),
           const SizedBox(height: 16),

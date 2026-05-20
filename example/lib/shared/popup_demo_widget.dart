@@ -182,3 +182,51 @@ class SampleCupertinoDialog extends StatelessWidget {
     );
   }
 }
+
+class CupertinoScrollableSheetBody extends StatelessWidget {
+  const CupertinoScrollableSheetBody({
+    super.key,
+    required this.scrollController,
+  });
+
+  final ScrollController scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            backgroundColor:
+                CupertinoColors.systemBackground.resolveFrom(context),
+            foregroundColor: CupertinoColors.label.resolveFrom(context),
+            title: const Text('Scrollable Sheet'),
+            actions: [
+              CupertinoButton(
+                onPressed: () => Navigator.of(context).pop('Closed via Done'),
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return CupertinoListTile(
+                  title: Text('Item ${index + 1}'),
+                  subtitle: const Text(
+                    'Drag the top of the list down to dismiss.',
+                  ),
+                  onTap: () =>
+                      Navigator.of(context).pop('Picked item ${index + 1}'),
+                );
+              },
+              childCount: 50,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

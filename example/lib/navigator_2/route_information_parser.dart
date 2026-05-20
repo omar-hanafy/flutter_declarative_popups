@@ -21,6 +21,8 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
           return AppRoutePath.bottomSheet();
         case 'cupertino-dialog':
           return AppRoutePath.cupertinoDialog();
+        case 'cupertino-scrollable-sheet':
+          return AppRoutePath.cupertinoScrollableSheet();
         default:
           return AppRoutePath.home();
       }
@@ -40,6 +42,8 @@ class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
         return RouteInformation(uri: Uri.parse('/bottom-sheet'));
       case AppRoute.cupertinoDialog:
         return RouteInformation(uri: Uri.parse('/cupertino-dialog'));
+      case AppRoute.cupertinoScrollableSheet:
+        return RouteInformation(uri: Uri.parse('/cupertino-scrollable-sheet'));
     }
   }
 }

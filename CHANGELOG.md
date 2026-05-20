@@ -31,14 +31,14 @@ the public surface has been trimmed before semver locks it in.
 
 ### Migrating from 0.3.x
 
-| 0.3.x | 1.0.0 |
-| --- | --- |
-| `CupertinoSheetPage.topGapRatio: 0.2` | `CupertinoSheetPage.topGap: 0.2` |
-| `CupertinoSheetPage(onWillPop: ...)` | `CupertinoSheetPage(canPop: false, onPopInvoked: ...)` |
-| `CupertinoSheetPage(transitionDuration / barrierColor / barrierDismissible / barrierLabel: ...)` | Wrap `CupertinoSheetRoute` directly |
-| `CupertinoDialogOverlay` widget | `CupertinoDialogPage` in `Navigator.pages` |
-| `CupertinoModalPopupOverlay` widget | `CupertinoModalPopupPage` in `Navigator.pages` |
-| `onBarrierTap: () => doX(); // sheet also pops` | `onBarrierTap: () { doX(); Navigator.pop(context); }` |
+| 0.3.x                                                                                            | 1.0.0                                                  |
+|--------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `CupertinoSheetPage.topGapRatio: 0.2`                                                            | `CupertinoSheetPage.topGap: 0.2`                       |
+| `CupertinoSheetPage(onWillPop: ...)`                                                             | `CupertinoSheetPage(canPop: false, onPopInvoked: ...)` |
+| `CupertinoSheetPage(transitionDuration / barrierColor / barrierDismissible / barrierLabel: ...)` | Wrap `CupertinoSheetRoute` directly                    |
+| `CupertinoDialogOverlay` widget                                                                  | `CupertinoDialogPage` in `Navigator.pages`             |
+| `CupertinoModalPopupOverlay` widget                                                              | `CupertinoModalPopupPage` in `Navigator.pages`         |
+| `onBarrierTap: () => doX(); // sheet also pops`                                                  | `onBarrierTap: () { doX(); Navigator.pop(context); }`  |
 
 ## [0.3.3] - 2026-02-17
 
