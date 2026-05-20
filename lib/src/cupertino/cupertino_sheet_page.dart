@@ -1,9 +1,8 @@
-// Copyright (c) 2025. All rights reserved.
+// Copyright (c) 2025-2026. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 /// A declarative [Page] that shows its content inside a Cupertino‑style sheet.
 ///
@@ -64,27 +63,22 @@ import 'package:flutter/material.dart';
 /// [`CupertinoSheetRoute`]: https://api.flutter.dev/flutter/cupertino/CupertinoSheetRoute-class.html
 class CupertinoSheetPage<T> extends Page<T> {
   const CupertinoSheetPage({
-    required this.builder,
+    this.builder,
+    this.scrollableBuilder,
     // Navigation behavior
     this.useNestedNavigation = false,
     this.nestedNavigatorKey,
-    this.onWillPop,
     // Sheet appearance
     this.backgroundColor,
     this.shape,
-    this.showDragHandle,
-    this.topGapRatio,
+    this.showDragHandle = false,
+    this.topGap,
     this.constraints,
     this.useSafeArea = false,
     // Sheet behavior
     this.enableDrag = true,
     this.isDismissible = true,
     this.onBarrierTap,
-    // Route properties (rarely needed)
-    this.transitionDuration,
-    this.barrierColor,
-    this.barrierDismissible,
-    this.barrierLabel,
     // Page properties
     super.key,
     super.name,
@@ -92,13 +86,22 @@ class CupertinoSheetPage<T> extends Page<T> {
     super.restorationId,
     super.canPop,
     super.onPopInvoked,
-  });
+  }) : assert(
+         builder != null || scrollableBuilder != null,
+         'Either builder or scrollableBuilder must not be null.',
+       );
 
   /// Builds the primary content of the sheet.
   ///
   /// The builder should create the main widget tree for the sheet's content.
-  /// This is the only required parameter.
-  final WidgetBuilder builder;
+  /// Provide either this or [scrollableBuilder].
+  final WidgetBuilder? builder;
+
+  /// Builds scrollable sheet content using Flutter's native sheet controller.
+  ///
+  /// If the returned scrollable uses the provided [ScrollController], dragging
+  /// downward from the top of the scrollable can dismiss the sheet.
+  final ScrollableWidgetBuilder? scrollableBuilder;
 
   /// Whether to wrap the content in a nested [Navigator].
   ///
@@ -110,14 +113,10 @@ class CupertinoSheetPage<T> extends Page<T> {
 
   /// Optional key for the nested navigator when [useNestedNavigation] is true.
   ///
-  /// Useful for controlling the nested navigator programmatically.
+  /// Useful for controlling the nested navigator programmatically. To gate
+  /// dismissal of the sheet, use [Page.canPop] and [Page.onPopInvoked] on
+  /// the page itself.
   final GlobalKey<NavigatorState>? nestedNavigatorKey;
-
-  /// Callback to control whether the sheet can be popped.
-  ///
-  /// Only used when [useNestedNavigation] is true. Return `true` to allow
-  /// the sheet to be dismissed, `false` to prevent dismissal.
-  final Future<bool> Function()? onWillPop;
 
   /// The background color of the sheet.
   ///
@@ -125,10 +124,13 @@ class CupertinoSheetPage<T> extends Page<T> {
   /// Consider using [CupertinoColors] for iOS-appropriate colors.
   final Color? backgroundColor;
 
-  /// The shape of the sheet.
+  /// The shape applied to the sheet when [backgroundColor] or this property
+  /// is provided.
   ///
-  /// Defaults to rounded corners at the top (12.0 radius) to match iOS style.
-  /// Set to `RoundedRectangleBorder()` for square corners.
+  /// If null but a [backgroundColor] is supplied, defaults to top-rounded
+  /// corners (12.0 radius) to match the iOS sheet look. When both this and
+  /// [backgroundColor] are null, the SDK's native sheet styling is used and
+  /// no extra wrapper is inserted.
   final ShapeBorder? shape;
 
   /// Whether to show a drag handle at the top of the sheet.
@@ -136,16 +138,14 @@ class CupertinoSheetPage<T> extends Page<T> {
   /// The handle is a small horizontal bar that provides a visual affordance
   /// for dragging. Common in iOS sheets.
   ///
-  /// Defaults to `null` (no drag handle).
-  final bool? showDragHandle;
+  /// Defaults to `false`.
+  final bool showDragHandle;
 
   /// The ratio of screen height reserved for the gap at the top.
   ///
-  /// iOS sheets don't cover the entire screen, leaving a gap at the top.
-  /// Default is 0.08 (8% of screen height), matching native iOS behavior.
-  ///
-  /// Set to 0.0 for a full-screen sheet.
-  final double? topGapRatio;
+  /// If null, defers to [CupertinoSheetRoute]'s default top gap (matching
+  /// native iOS behavior). Set to 0.0 for a full-screen sheet.
+  final double? topGap;
 
   /// Additional constraints to apply to the sheet.
   ///
@@ -175,272 +175,135 @@ class CupertinoSheetPage<T> extends Page<T> {
 
   /// Callback when the barrier (area outside the sheet) is tapped.
   ///
-  /// Only called if [barrierDismissible] is true. Note that by default,
-  /// iOS sheets have a transparent, non-dismissible barrier.
+  /// When provided, this callback replaces the default dismiss behavior; the
+  /// sheet will not pop unless the callback itself pops the navigator. Only
+  /// invoked when the barrier is dismissible. Note that by default, iOS
+  /// sheets have a transparent, non-dismissible barrier.
   final VoidCallback? onBarrierTap;
-
-  /// Custom transition duration for the sheet animation.
-  ///
-  /// Defaults to 500ms to match iOS behavior. Only change this if you
-  /// need custom animation timing.
-  final Duration? transitionDuration;
-
-  /// The color of the modal barrier (area outside the sheet).
-  ///
-  /// Defaults to transparent to match iOS behavior. Set to a semi-transparent
-  /// black for a dimmed background effect.
-  final Color? barrierColor;
-
-  /// Whether tapping the barrier dismisses the sheet.
-  ///
-  /// Defaults to `false` to match iOS behavior. iOS sheets typically
-  /// require dragging or an explicit close button.
-  final bool? barrierDismissible;
-
-  /// Semantic label for the barrier.
-  ///
-  /// Used by screen readers to describe the barrier. Only relevant if
-  /// [barrierColor] is not fully transparent.
-  final String? barrierLabel;
 
   @override
   Route<T> createRoute(BuildContext context) {
-    // Handle nested navigation setup if requested
-    var effectiveBuilder = builder;
+    final navigatorKey = useNestedNavigation
+        ? nestedNavigatorKey ?? GlobalKey<NavigatorState>()
+        : null;
 
-    if (useNestedNavigation) {
-      final navigatorKey = nestedNavigatorKey ?? GlobalKey<NavigatorState>();
+    return _CustomizedCupertinoSheetRoute<T>(
+      scrollableBuilder: (context, scrollController) {
+        final content = useNestedNavigation
+            ? _buildNestedNavigator(navigatorKey!, scrollController)
+            : _buildContent(context, scrollController);
 
-      effectiveBuilder = (BuildContext context) {
-        return NavigatorPopHandler(
-          onPopWithResult: (T? result) {
-            navigatorKey.currentState?.maybePop();
-          },
-          child: Navigator(
-            key: navigatorKey,
-            initialRoute: '/',
-            onGenerateInitialRoutes:
-                (NavigatorState navigator, String initialRouteName) {
+        return _applyCustomizations(context, content);
+      },
+      settings: this,
+      enableDrag: enableDrag,
+      showDragHandle: showDragHandle,
+      topGap: topGap,
+      isDismissible: isDismissible,
+      onBarrierTap: onBarrierTap,
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    ScrollController scrollController,
+  ) {
+    return scrollableBuilder?.call(context, scrollController) ??
+        builder!(context);
+  }
+
+  Widget _buildNestedNavigator(
+    GlobalKey<NavigatorState> navigatorKey,
+    ScrollController scrollController,
+  ) {
+    return NavigatorPopHandler(
+      onPopWithResult: (T? result) {
+        navigatorKey.currentState?.maybePop();
+      },
+      child: Navigator(
+        key: navigatorKey,
+        initialRoute: '/',
+        onGenerateInitialRoutes:
+            (NavigatorState navigator, String initialRouteName) {
               return <Route<void>>[
                 CupertinoPageRoute<void>(
                   builder: (BuildContext context) {
-                    final content = builder(context);
-
-                    // Handle back gestures for nested navigation
-                    return PopScope(
-                      canPop: false,
-                      onPopInvokedWithResult:
-                          (bool didPop, Object? result) async {
-                        if (didPop) {
-                          return;
-                        }
-
-                        // Check custom handler first
-                        if (onWillPop != null) {
-                          final shouldPop = await onWillPop!();
-                          if (shouldPop && context.mounted) {
-                            Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pop(result);
-                          }
-                        } else {
-                          Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          ).pop(result);
-                        }
-                      },
-                      child: content,
-                    );
+                    return _buildContent(context, scrollController);
                   },
                 ),
               ];
             },
-          ),
-        );
-      };
-    }
-
-    return _CustomizedCupertinoSheetRoute<T>(
-      builder: effectiveBuilder,
-      settings: this,
-      enableDrag: enableDrag,
-      // Appearance
-      backgroundColor: backgroundColor,
-      shape: shape,
-      showDragHandle: showDragHandle,
-      topGapRatio: topGapRatio,
-      constraints: constraints,
-      useSafeArea: useSafeArea,
-      // Behavior
-      isDismissible: isDismissible,
-      onBarrierTap: onBarrierTap,
-      // Route overrides
-      customTransitionDuration: transitionDuration,
-      customBarrierColor: barrierColor,
-      customBarrierDismissible: barrierDismissible,
-      customBarrierLabel: barrierLabel,
-    );
-  }
-}
-
-/// Internal route that extends [CupertinoSheetRoute] with customization support.
-class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
-  _CustomizedCupertinoSheetRoute({
-    required super.builder,
-    required super.settings,
-    required super.enableDrag,
-    // Appearance
-    this.backgroundColor,
-    this.shape,
-    bool? showDragHandle,
-    this.topGapRatio,
-    this.constraints,
-    this.useSafeArea = false,
-    // Behavior
-    this.isDismissible = true,
-    this.onBarrierTap,
-    // Route overrides
-    this.customTransitionDuration,
-    this.customBarrierColor,
-    this.customBarrierDismissible,
-    this.customBarrierLabel,
-  }) : _showDragHandle = showDragHandle;
-
-  // Appearance customization
-  final Color? backgroundColor;
-  final ShapeBorder? shape;
-  final bool? _showDragHandle;
-  final double? topGapRatio;
-  final BoxConstraints? constraints;
-  final bool useSafeArea;
-
-  // Behavior customization
-  final bool isDismissible;
-  final VoidCallback? onBarrierTap;
-
-  // Route property overrides
-  final Duration? customTransitionDuration;
-  final Color? customBarrierColor;
-  final bool? customBarrierDismissible;
-  final String? customBarrierLabel;
-
-  @override
-  Duration get transitionDuration =>
-      customTransitionDuration ?? super.transitionDuration;
-
-  @override
-  Color? get barrierColor => customBarrierColor ?? super.barrierColor;
-
-  @override
-  bool get barrierDismissible =>
-      customBarrierDismissible ?? super.barrierDismissible;
-
-  @override
-  String? get barrierLabel => customBarrierLabel ?? super.barrierLabel;
-
-  @override
-  Widget buildContent(BuildContext context) {
-    var content = builder(context);
-
-    // Apply appearance customizations
-    content = _applyCustomizations(context, content);
-
-    // Wrap with the standard sheet structure
-    final bottomPadding =
-        MediaQuery.sizeOf(context).height * (topGapRatio ?? 0.08);
-
-    return MediaQuery.removePadding(
-      context: context,
-      removeTop: true,
-      removeBottom: true,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomPadding),
-        child: CupertinoUserInterfaceLevel(
-          data: CupertinoUserInterfaceLevelData.elevated,
-          child: content,
-        ),
       ),
     );
   }
 
   Widget _applyCustomizations(BuildContext context, Widget widget) {
     var content = widget;
-    // Apply SafeArea first if requested
+
     if (useSafeArea) {
       content = SafeArea(child: content);
     }
 
-    // Apply constraints
     if (constraints != null) {
       content = ConstrainedBox(constraints: constraints!, child: content);
     }
 
-    // Wrap in Material for appearance customization
     if (backgroundColor != null || shape != null) {
-      content = Material(
-        color: backgroundColor ??
-            CupertinoColors.systemBackground.resolveFrom(context),
-        shape: shape ??
-            const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-        clipBehavior: Clip.antiAlias,
-        child: content,
-      );
-    } else {
-      // Apply default corner radius
-      content = ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        child: content,
-      );
-    }
-
-    // Add drag handle
-    if (_showDragHandle ?? false) {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildDragHandle(context),
-          Flexible(child: content),
-        ],
+      final effectiveShape =
+          shape ??
+          const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          );
+      content = DecoratedBox(
+        decoration: ShapeDecoration(
+          color:
+              backgroundColor ??
+              CupertinoColors.systemBackground.resolveFrom(context),
+          shape: effectiveShape,
+        ),
+        child: ClipPath(
+          clipper: ShapeBorderClipper(shape: effectiveShape),
+          child: content,
+        ),
       );
     }
 
     return content;
   }
+}
 
-  Widget _buildDragHandle(BuildContext context) {
-    return Container(
-      height: 22,
-      alignment: Alignment.center,
-      child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
+/// Internal route that extends [CupertinoSheetRoute] with customization support.
+class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
+  _CustomizedCupertinoSheetRoute({
+    required ScrollableWidgetBuilder scrollableBuilder,
+    required RouteSettings settings,
+    required bool enableDrag,
+    required super.showDragHandle,
+    super.topGap,
+    this.isDismissible = true,
+    this.onBarrierTap,
+  }) : super(
+         scrollableBuilder: scrollableBuilder,
+         settings: settings,
+         enableDrag: enableDrag && isDismissible,
+       );
+
+  final bool isDismissible;
+  final VoidCallback? onBarrierTap;
+
+  @override
+  bool get barrierDismissible => isDismissible && super.barrierDismissible;
 
   @override
   Widget buildModalBarrier() {
-    if (onBarrierTap != null && barrierDismissible) {
-      return GestureDetector(
-        onTap: () {
-          onBarrierTap?.call();
-          if (isDismissible && barrierDismissible) {
-            navigator?.maybePop();
-          }
-        },
-        behavior: HitTestBehavior.opaque,
-        child: super.buildModalBarrier(),
-      );
+    if (onBarrierTap == null || !barrierDismissible) {
+      return super.buildModalBarrier();
     }
-    return super.buildModalBarrier();
+    return GestureDetector(
+      onTap: onBarrierTap,
+      behavior: HitTestBehavior.opaque,
+      child: super.buildModalBarrier(),
+    );
   }
 
   @override

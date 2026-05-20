@@ -1,4 +1,4 @@
-// Copyright (c) 2025. All rights reserved.
+// Copyright (c) 2025-2026. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -106,7 +106,8 @@ extension DeclarativePopupNavigation on NavigatorState {
       anchorPoint: anchorPoint,
       barrierColor: barrierColor,
       barrierDismissible: barrierDismissible,
-      barrierLabel: barrierLabel ??
+      barrierLabel:
+          barrierLabel ??
           (barrierDismissible
               ? MaterialLocalizations.of(context).modalBarrierDismissLabel
               : null),
@@ -181,16 +182,19 @@ extension DeclarativePopupNavigation on NavigatorState {
       clipBehavior: clipBehavior,
       barrierLabel:
           barrierLabel ?? MaterialLocalizations.of(context).scrimLabel,
-      barrierOnTapHint: barrierOnTapHint ??
-          MaterialLocalizations.of(context).scrimOnTapHint(
-            MaterialLocalizations.of(context).bottomSheetLabel,
-          ),
-      capturedThemes: capturedThemes ??
+      barrierOnTapHint:
+          barrierOnTapHint ??
+          MaterialLocalizations.of(
+            context,
+          ).scrimOnTapHint(MaterialLocalizations.of(context).bottomSheetLabel),
+      capturedThemes:
+          capturedThemes ??
           InheritedTheme.capture(
             from: context,
             to: Navigator.of(context).context,
           ),
-      modalBarrierColor: modalBarrierColor ??
+      modalBarrierColor:
+          modalBarrierColor ??
           Theme.of(context).bottomSheetTheme.modalBarrierColor,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
@@ -384,43 +388,46 @@ extension DeclarativePopupNavigation on NavigatorState {
   /// );
   /// ```
   Future<T?> showCupertinoSheet<T>({
-    required WidgetBuilder builder,
+    WidgetBuilder? builder,
+    ScrollableWidgetBuilder? scrollableBuilder,
     bool useNestedNavigation = false,
     GlobalKey<NavigatorState>? nestedNavigatorKey,
-    Future<bool> Function()? onWillPop,
     Color? backgroundColor,
     ShapeBorder? shape,
-    bool? showDragHandle,
-    double? topGapRatio,
+    bool showDragHandle = false,
+    double? topGap,
     BoxConstraints? constraints,
     bool useSafeArea = false,
     bool enableDrag = true,
     bool isDismissible = true,
     VoidCallback? onBarrierTap,
-    Duration? transitionDuration,
-    Color? barrierColor,
-    bool? barrierDismissible,
-    String? barrierLabel,
+    LocalKey? key,
+    String? name,
+    Object? arguments,
     String? restorationId,
   }) {
+    assert(
+      builder != null || scrollableBuilder != null,
+      'Either builder or scrollableBuilder must not be null.',
+    );
+
     final page = CupertinoSheetPage<T>(
       builder: builder,
+      scrollableBuilder: scrollableBuilder,
       useNestedNavigation: useNestedNavigation,
       nestedNavigatorKey: nestedNavigatorKey,
-      onWillPop: onWillPop,
       backgroundColor: backgroundColor,
       shape: shape,
       showDragHandle: showDragHandle,
-      topGapRatio: topGapRatio,
+      topGap: topGap,
       constraints: constraints,
       useSafeArea: useSafeArea,
       enableDrag: enableDrag,
       isDismissible: isDismissible,
       onBarrierTap: onBarrierTap,
-      transitionDuration: transitionDuration,
-      barrierColor: barrierColor,
-      barrierDismissible: barrierDismissible,
-      barrierLabel: barrierLabel,
+      key: key,
+      name: name,
+      arguments: arguments,
       restorationId: restorationId,
     );
 
@@ -457,7 +464,8 @@ extension DeclarativePopupBuilders on BuildContext {
       anchorPoint: anchorPoint,
       barrierColor: barrierColor,
       barrierDismissible: barrierDismissible,
-      barrierLabel: barrierLabel ??
+      barrierLabel:
+          barrierLabel ??
           (barrierDismissible
               ? MaterialLocalizations.of(this).modalBarrierDismissLabel
               : null),
@@ -510,16 +518,16 @@ extension DeclarativePopupBuilders on BuildContext {
       shape: shape,
       clipBehavior: clipBehavior,
       barrierLabel: barrierLabel ?? MaterialLocalizations.of(this).scrimLabel,
-      barrierOnTapHint: barrierOnTapHint ??
-          MaterialLocalizations.of(this).scrimOnTapHint(
-            MaterialLocalizations.of(this).bottomSheetLabel,
-          ),
-      capturedThemes: capturedThemes ??
-          InheritedTheme.capture(
-            from: this,
-            to: Navigator.of(this).context,
-          ),
-      modalBarrierColor: modalBarrierColor ??
+      barrierOnTapHint:
+          barrierOnTapHint ??
+          MaterialLocalizations.of(
+            this,
+          ).scrimOnTapHint(MaterialLocalizations.of(this).bottomSheetLabel),
+      capturedThemes:
+          capturedThemes ??
+          InheritedTheme.capture(from: this, to: Navigator.of(this).context),
+      modalBarrierColor:
+          modalBarrierColor ??
           Theme.of(this).bottomSheetTheme.modalBarrierColor,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
@@ -618,46 +626,43 @@ extension DeclarativePopupBuilders on BuildContext {
   ///
   /// Useful for declarative navigation where you manage the pages list yourself.
   CupertinoSheetPage<T> createCupertinoSheetPage<T>({
-    required WidgetBuilder builder,
+    WidgetBuilder? builder,
+    ScrollableWidgetBuilder? scrollableBuilder,
     bool useNestedNavigation = false,
     GlobalKey<NavigatorState>? nestedNavigatorKey,
-    Future<bool> Function()? onWillPop,
     Color? backgroundColor,
     ShapeBorder? shape,
-    bool? showDragHandle,
-    double? topGapRatio,
+    bool showDragHandle = false,
+    double? topGap,
     BoxConstraints? constraints,
     bool useSafeArea = false,
     bool enableDrag = true,
     bool isDismissible = true,
     VoidCallback? onBarrierTap,
-    Duration? transitionDuration,
-    Color? barrierColor,
-    bool? barrierDismissible,
-    String? barrierLabel,
     LocalKey? key,
     String? name,
     Object? arguments,
     String? restorationId,
   }) {
+    assert(
+      builder != null || scrollableBuilder != null,
+      'Either builder or scrollableBuilder must not be null.',
+    );
+
     return CupertinoSheetPage<T>(
       builder: builder,
+      scrollableBuilder: scrollableBuilder,
       useNestedNavigation: useNestedNavigation,
       nestedNavigatorKey: nestedNavigatorKey,
-      onWillPop: onWillPop,
       backgroundColor: backgroundColor,
       shape: shape,
       showDragHandle: showDragHandle,
-      topGapRatio: topGapRatio,
+      topGap: topGap,
       constraints: constraints,
       useSafeArea: useSafeArea,
       enableDrag: enableDrag,
       isDismissible: isDismissible,
       onBarrierTap: onBarrierTap,
-      transitionDuration: transitionDuration,
-      barrierColor: barrierColor,
-      barrierDismissible: barrierDismissible,
-      barrierLabel: barrierLabel,
       key: key,
       name: name,
       arguments: arguments,

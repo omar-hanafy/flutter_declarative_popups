@@ -1,4 +1,4 @@
-// Copyright (c) 2025. All rights reserved.
+// Copyright (c) 2025-2026. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -107,12 +107,14 @@ class ModalBottomSheetPage<T> extends Page<T> {
       clipBehavior: clipBehavior,
       barrierLabel:
           barrierLabel ?? MaterialLocalizations.of(context).scrimLabel,
-      barrierOnTapHint: barrierOnTapHint ??
+      barrierOnTapHint:
+          barrierOnTapHint ??
           MaterialLocalizations.of(
             context,
           ).scrimOnTapHint(MaterialLocalizations.of(context).bottomSheetLabel),
       capturedThemes: capturedThemes,
-      modalBarrierColor: modalBarrierColor ??
+      modalBarrierColor:
+          modalBarrierColor ??
           Theme.of(context).bottomSheetTheme.modalBarrierColor,
       isDismissible: isDismissible,
       enableDrag: enableDrag,

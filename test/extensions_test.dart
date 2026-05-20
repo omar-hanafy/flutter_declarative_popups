@@ -14,19 +14,19 @@ void main() {
             builder: (context) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
-                  result =
-                      await Navigator.of(context).showDeclarativeDialog<String>(
-                    builder: (context) => AlertDialog(
-                      title: const Text('Test Dialog'),
-                      actions: [
-                        TextButton(
-                          onPressed: () =>
-                              Navigator.pop(context, 'dialog_result'),
-                          child: const Text('OK'),
+                  result = await Navigator.of(context)
+                      .showDeclarativeDialog<String>(
+                        builder: (context) => AlertDialog(
+                          title: const Text('Test Dialog'),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, 'dialog_result'),
+                              child: const Text('OK'),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
+                      );
                 },
                 child: const Text('Show Dialog'),
               ),
@@ -46,8 +46,9 @@ void main() {
       expect(result, 'dialog_result');
     });
 
-    testWidgets('showDeclarativeModalBottomSheet works correctly',
-        (tester) async {
+    testWidgets('showDeclarativeModalBottomSheet works correctly', (
+      tester,
+    ) async {
       String? result;
 
       await tester.pumpWidget(
@@ -58,18 +59,18 @@ void main() {
                 onPressed: () async {
                   result = await Navigator.of(context)
                       .showDeclarativeModalBottomSheet<String>(
-                    builder: (context) => SizedBox(
-                      height: 200,
-                      child: Center(
-                        child: TextButton(
-                          onPressed: () =>
-                              Navigator.pop(context, 'sheet_result'),
-                          child: const Text('Close Sheet'),
+                        builder: (context) => SizedBox(
+                          height: 200,
+                          child: Center(
+                            child: TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, 'sheet_result'),
+                              child: const Text('Close Sheet'),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    showDragHandle: true,
-                  );
+                        showDragHandle: true,
+                      );
                 },
                 child: const Text('Show Sheet'),
               ),
@@ -89,8 +90,9 @@ void main() {
       expect(result, 'sheet_result');
     });
 
-    testWidgets('showDeclarativeCupertinoDialog works correctly',
-        (tester) async {
+    testWidgets('showDeclarativeCupertinoDialog works correctly', (
+      tester,
+    ) async {
       String? result;
 
       await tester.pumpWidget(
@@ -101,23 +103,24 @@ void main() {
                 onPressed: () async {
                   result = await Navigator.of(context)
                       .showDeclarativeCupertinoDialog<String>(
-                    builder: (context) => CupertinoAlertDialog(
-                      title: const Text('Test Dialog'),
-                      content: const Text('This is a test'),
-                      actions: [
-                        CupertinoDialogAction(
-                          onPressed: () =>
-                              Navigator.pop(context, 'cancel_result'),
-                          child: const Text('Cancel'),
+                        builder: (context) => CupertinoAlertDialog(
+                          title: const Text('Test Dialog'),
+                          content: const Text('This is a test'),
+                          actions: [
+                            CupertinoDialogAction(
+                              onPressed: () =>
+                                  Navigator.pop(context, 'cancel_result'),
+                              child: const Text('Cancel'),
+                            ),
+                            CupertinoDialogAction(
+                              onPressed: () =>
+                                  Navigator.pop(context, 'ok_result'),
+                              isDefaultAction: true,
+                              child: const Text('OK'),
+                            ),
+                          ],
                         ),
-                        CupertinoDialogAction(
-                          onPressed: () => Navigator.pop(context, 'ok_result'),
-                          isDefaultAction: true,
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
+                      );
                 },
                 child: const Text('Show Cupertino Dialog'),
               ),
@@ -146,29 +149,32 @@ void main() {
             builder: (context) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
-                  result =
-                      await Navigator.of(context).showCupertinoSheet<String>(
-                    builder: (context) => Container(
-                      color: CupertinoColors.systemBackground,
-                      child: SafeArea(
-                        child: Column(
-                          children: [
-                            CupertinoNavigationBar(
-                              middle: const Text('Cupertino Sheet'),
-                              trailing: CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                child: const Text('Done'),
-                                onPressed: () =>
-                                    Navigator.pop(context, 'cupertino_result'),
-                              ),
+                  result = await Navigator.of(context)
+                      .showCupertinoSheet<String>(
+                        builder: (context) => Container(
+                          color: CupertinoColors.systemBackground,
+                          child: SafeArea(
+                            child: Column(
+                              children: [
+                                CupertinoNavigationBar(
+                                  middle: const Text('Cupertino Sheet'),
+                                  trailing: CupertinoButton(
+                                    padding: EdgeInsets.zero,
+                                    child: const Text('Done'),
+                                    onPressed: () => Navigator.pop(
+                                      context,
+                                      'cupertino_result',
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: Center(child: Text('Content')),
+                                ),
+                              ],
                             ),
-                            const Expanded(
-                                child: Center(child: Text('Content'))),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  );
+                      );
                 },
                 child: const Text('Show Cupertino Sheet'),
               ),
@@ -187,6 +193,57 @@ void main() {
 
       expect(result, 'cupertino_result');
     });
+
+    testWidgets('showCupertinoSheet supports scrollableBuilder', (
+      tester,
+    ) async {
+      String? result;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async {
+                  result = await Navigator.of(context)
+                      .showCupertinoSheet<String>(
+                        scrollableBuilder: (context, scrollController) {
+                          return ListView(
+                            controller: scrollController,
+                            children: [
+                              CupertinoButton(
+                                child: const Text('Done Scrollable Sheet'),
+                                onPressed: () => Navigator.pop(
+                                  context,
+                                  'scrollable_cupertino_result',
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                        showDragHandle: true,
+                        topGap: 0.12,
+                        name: 'scrollable-sheet',
+                        arguments: 'from-extension',
+                      );
+                },
+                child: const Text('Show Scrollable Cupertino Sheet'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show Scrollable Cupertino Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Done Scrollable Sheet'), findsOneWidget);
+
+      await tester.tap(find.text('Done Scrollable Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(result, 'scrollable_cupertino_result');
+    });
   });
 
   group('BuildContext Extensions', () {
@@ -196,9 +253,8 @@ void main() {
           home: Builder(
             builder: (context) {
               final page = context.createDialogPage<String>(
-                builder: (context) => const AlertDialog(
-                  title: Text('Created Dialog'),
-                ),
+                builder: (context) =>
+                    const AlertDialog(title: Text('Created Dialog')),
               );
 
               expect(page, isA<DialogPage<String>>());
@@ -211,8 +267,9 @@ void main() {
       );
     });
 
-    testWidgets('createModalBottomSheetPage creates a valid page',
-        (tester) async {
+    testWidgets('createModalBottomSheetPage creates a valid page', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
@@ -233,16 +290,16 @@ void main() {
       );
     });
 
-    testWidgets('createCupertinoDialogPage creates a valid page',
-        (tester) async {
+    testWidgets('createCupertinoDialogPage creates a valid page', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
             builder: (context) {
               final page = context.createCupertinoDialogPage<String>(
-                builder: (context) => const CupertinoAlertDialog(
-                  title: Text('Created Dialog'),
-                ),
+                builder: (context) =>
+                    const CupertinoAlertDialog(title: Text('Created Dialog')),
                 barrierDismissible: false,
                 transitionDuration: const Duration(milliseconds: 300),
               );
@@ -251,7 +308,9 @@ void main() {
               expect(page.builder, isNotNull);
               expect(page.barrierDismissible, false);
               expect(
-                  page.transitionDuration, const Duration(milliseconds: 300));
+                page.transitionDuration,
+                const Duration(milliseconds: 300),
+              );
 
               return const Scaffold(body: Text('Test'));
             },
@@ -260,16 +319,15 @@ void main() {
       );
     });
 
-    testWidgets('createCupertinoModalPopupPage creates a valid page',
-        (tester) async {
+    testWidgets('createCupertinoModalPopupPage creates a valid page', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
             builder: (context) {
               final page = context.createCupertinoModalPopupPage<String>(
-                builder: (context) => const CupertinoActionSheet(
-                  actions: [],
-                ),
+                builder: (context) => const CupertinoActionSheet(actions: []),
               );
 
               expect(page, isA<CupertinoModalPopupPage<String>>());
@@ -282,8 +340,9 @@ void main() {
       );
     });
 
-    testWidgets('createCupertinoSheetPage creates a valid page',
-        (tester) async {
+    testWidgets('createCupertinoSheetPage creates a valid page', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
@@ -296,6 +355,36 @@ void main() {
               expect(page, isA<CupertinoSheetPage<String>>());
               expect(page.builder, isNotNull);
               expect(page.useNestedNavigation, true);
+
+              return const Scaffold(body: Text('Test'));
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('createCupertinoSheetPage supports scrollableBuilder', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              final page = context.createCupertinoSheetPage<String>(
+                scrollableBuilder: (context, scrollController) {
+                  return ListView(controller: scrollController);
+                },
+                topGap: 0.2,
+                name: 'created-scrollable-sheet',
+                arguments: 42,
+              );
+
+              expect(page, isA<CupertinoSheetPage<String>>());
+              expect(page.builder, isNull);
+              expect(page.scrollableBuilder, isNotNull);
+              expect(page.topGap, 0.2);
+              expect(page.name, 'created-scrollable-sheet');
+              expect(page.arguments, 42);
 
               return const Scaffold(body: Text('Test'));
             },
@@ -329,8 +418,9 @@ void main() {
   });
 
   group('Integration with Declarative Navigation', () {
-    testWidgets('CupertinoDialogPage works with declarative navigation',
-        (tester) async {
+    testWidgets('CupertinoDialogPage works with declarative navigation', (
+      tester,
+    ) async {
       bool showDialog = false;
 
       // Create a stateful widget that properly manages state
@@ -403,8 +493,9 @@ void main() {
       expect(find.text('Show Cupertino Dialog'), findsOneWidget);
     });
 
-    testWidgets('pages created with extensions work in Navigator pages list',
-        (tester) async {
+    testWidgets('pages created with extensions work in Navigator pages list', (
+      tester,
+    ) async {
       bool showDialog = false;
 
       // Create a stateful widget that properly manages state

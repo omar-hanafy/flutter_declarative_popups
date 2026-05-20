@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_declarative_popups/flutter_declarative_popups.dart';
 import '../shared/popup_demo_widget.dart';
@@ -9,6 +10,7 @@ enum AppRoute {
   dialog,
   bottomSheet,
   cupertinoDialog,
+  cupertinoScrollableSheet,
 }
 
 class AppRoutePath {
@@ -18,6 +20,8 @@ class AppRoutePath {
   AppRoutePath.dialog() : route = AppRoute.dialog;
   AppRoutePath.bottomSheet() : route = AppRoute.bottomSheet;
   AppRoutePath.cupertinoDialog() : route = AppRoute.cupertinoDialog;
+  AppRoutePath.cupertinoScrollableSheet()
+      : route = AppRoute.cupertinoScrollableSheet;
 }
 
 class AppRouterDelegate extends RouterDelegate<AppRoutePath>
@@ -29,9 +33,11 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   Completer<String?> dialogCompleter = Completer();
   Completer<String?> bottomSheetCompleter = Completer();
   Completer<String?> cupertinoDialogCompleter = Completer();
+  Completer<String?> cupertinoScrollableSheetCompleter = Completer();
   String? _dialogResult;
   String? _bottomSheetResult;
   String? _cupertinoDialogResult;
+  String? _cupertinoScrollableSheetResult;
 
   AppRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
 
@@ -45,6 +51,10 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
 
   void _cacheCupertinoDialogResult(String? result) {
     _cupertinoDialogResult = result;
+  }
+
+  void _cacheCupertinoScrollableSheetResult(String? result) {
+    _cupertinoScrollableSheetResult = result;
   }
 
   void _resolveDialogResult() {
@@ -74,6 +84,15 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
     cupertinoDialogCompleter = Completer();
   }
 
+  void _resolveCupertinoScrollableSheetResult() {
+    if (cupertinoScrollableSheetCompleter.isCompleted) {
+      return;
+    }
+    cupertinoScrollableSheetCompleter.complete(_cupertinoScrollableSheetResult);
+    _cupertinoScrollableSheetResult = null;
+    cupertinoScrollableSheetCompleter = Completer();
+  }
+
   @override
   AppRoutePath? get currentConfiguration {
     switch (_currentRoute) {
@@ -85,6 +104,8 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
         return AppRoutePath.bottomSheet();
       case AppRoute.cupertinoDialog:
         return AppRoutePath.cupertinoDialog();
+      case AppRoute.cupertinoScrollableSheet:
+        return AppRoutePath.cupertinoScrollableSheet();
     }
   }
 
@@ -128,6 +149,19 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
               }
             },
           ),
+        if (_currentRoute == AppRoute.cupertinoScrollableSheet)
+          CupertinoSheetPage<String>(
+            key: const ValueKey('cupertino-scrollable-sheet'),
+            scrollableBuilder: (context, scrollController) =>
+                CupertinoScrollableSheetBody(
+                    scrollController: scrollController),
+            backgroundColor: CupertinoColors.systemGroupedBackground,
+            onPopInvoked: (didPop, result) {
+              if (didPop) {
+                _cacheCupertinoScrollableSheetResult(result);
+              }
+            },
+          ),
       ],
       onDidRemovePage: (page) {
         if (page.key == const ValueKey('dialog')) {
@@ -136,6 +170,8 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
           _resolveBottomSheetResult();
         } else if (page.key == const ValueKey('cupertino-dialog')) {
           _resolveCupertinoDialogResult();
+        } else if (page.key == const ValueKey('cupertino-scrollable-sheet')) {
+          _resolveCupertinoScrollableSheetResult();
         }
         _currentRoute = AppRoute.home;
         notifyListeners();
@@ -164,6 +200,12 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   void showCupertinoDialog() {
     _cupertinoDialogResult = null;
     _currentRoute = AppRoute.cupertinoDialog;
+    notifyListeners();
+  }
+
+  void showCupertinoScrollableSheet() {
+    _cupertinoScrollableSheetResult = null;
+    _currentRoute = AppRoute.cupertinoScrollableSheet;
     notifyListeners();
   }
 }

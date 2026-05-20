@@ -1,4 +1,4 @@
-// Copyright (c) 2025. All rights reserved.
+// Copyright (c) 2025-2026. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -86,9 +86,9 @@ class RawDialogPage<T> extends Page<T> {
     super.canPop,
     super.onPopInvoked,
   }) : assert(
-          !barrierDismissible || barrierLabel != null,
-          'A barrierLabel must be provided when barrierDismissible is true',
-        );
+         !barrierDismissible || barrierLabel != null,
+         'A barrierLabel must be provided when barrierDismissible is true',
+       );
 
   /// Builds the primary content of the route.
   ///

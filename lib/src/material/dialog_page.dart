@@ -1,4 +1,4 @@
-// Copyright (c) 2025. All rights reserved.
+// Copyright (c) 2025-2026. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -126,7 +126,8 @@ class DialogPage<T> extends Page<T> {
   @override
   Route<T> createRoute(BuildContext context) {
     // If no barrier label is provided, use the default from Material localizations
-    final effectiveBarrierLabel = barrierLabel ??
+    final effectiveBarrierLabel =
+        barrierLabel ??
         (barrierDismissible
             ? MaterialLocalizations.of(context).modalBarrierDismissLabel
             : null);
