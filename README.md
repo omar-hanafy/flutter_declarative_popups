@@ -28,7 +28,7 @@ Material, Cupertino, and fully‑custom pop‑ups with type‑safe results, deep
 ```yaml
 # pubspec.yaml
 dependencies:
-  flutter_declarative_popups: ^0.4.0
+  flutter_declarative_popups: ^1.0.0
 ```
 
 ```dart

@@ -1,7 +1,8 @@
 # Changelog
 
-## [0.4.0] - 2026-05-20
+## [1.0.0] - 2026-05-20
 
+- First stable release.
 - BREAKING: Raised the minimum SDK requirements to Flutter 3.44.0 and Dart 3.12.0.
 - BREAKING: `CupertinoSheetPage.builder` is now nullable because `scrollableBuilder` can be supplied instead.
 - BREAKING: `CupertinoSheetPage.showDragHandle` and Cupertino sheet helper `showDragHandle` parameters are now non-nullable booleans that default to `false`.
