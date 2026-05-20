@@ -126,7 +126,8 @@ class DialogPage<T> extends Page<T> {
   @override
   Route<T> createRoute(BuildContext context) {
     // If no barrier label is provided, use the default from Material localizations
-    final effectiveBarrierLabel = barrierLabel ??
+    final effectiveBarrierLabel =
+        barrierLabel ??
         (barrierDismissible
             ? MaterialLocalizations.of(context).modalBarrierDismissLabel
             : null);

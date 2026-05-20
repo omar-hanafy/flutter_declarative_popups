@@ -86,9 +86,9 @@ class RawDialogPage<T> extends Page<T> {
     super.canPop,
     super.onPopInvoked,
   }) : assert(
-          !barrierDismissible || barrierLabel != null,
-          'A barrierLabel must be provided when barrierDismissible is true',
-        );
+         !barrierDismissible || barrierLabel != null,
+         'A barrierLabel must be provided when barrierDismissible is true',
+       );
 
   /// Builds the primary content of the route.
   ///

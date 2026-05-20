@@ -64,7 +64,8 @@ import 'package:flutter/material.dart';
 /// [`CupertinoSheetRoute`]: https://api.flutter.dev/flutter/cupertino/CupertinoSheetRoute-class.html
 class CupertinoSheetPage<T> extends Page<T> {
   const CupertinoSheetPage({
-    required this.builder,
+    this.builder,
+    this.scrollableBuilder,
     // Navigation behavior
     this.useNestedNavigation = false,
     this.nestedNavigatorKey,
@@ -73,7 +74,8 @@ class CupertinoSheetPage<T> extends Page<T> {
     this.backgroundColor,
     this.shape,
     this.showDragHandle,
-    this.topGapRatio,
+    double? topGap,
+    @Deprecated('Use topGap instead.') double? topGapRatio,
     this.constraints,
     this.useSafeArea = false,
     // Sheet behavior
@@ -92,13 +94,27 @@ class CupertinoSheetPage<T> extends Page<T> {
     super.restorationId,
     super.canPop,
     super.onPopInvoked,
-  });
+  }) : assert(
+         builder != null || scrollableBuilder != null,
+         'Either builder or scrollableBuilder must not be null.',
+       ),
+       assert(
+         topGap == null || topGapRatio == null,
+         'Use topGap or topGapRatio, not both.',
+       ),
+       topGap = topGap ?? topGapRatio;
 
   /// Builds the primary content of the sheet.
   ///
   /// The builder should create the main widget tree for the sheet's content.
-  /// This is the only required parameter.
-  final WidgetBuilder builder;
+  /// Provide either this or [scrollableBuilder].
+  final WidgetBuilder? builder;
+
+  /// Builds scrollable sheet content using Flutter's native sheet controller.
+  ///
+  /// If the returned scrollable uses the provided [ScrollController], dragging
+  /// downward from the top of the scrollable can dismiss the sheet.
+  final ScrollableWidgetBuilder? scrollableBuilder;
 
   /// Whether to wrap the content in a nested [Navigator].
   ///
@@ -145,7 +161,11 @@ class CupertinoSheetPage<T> extends Page<T> {
   /// Default is 0.08 (8% of screen height), matching native iOS behavior.
   ///
   /// Set to 0.0 for a full-screen sheet.
-  final double? topGapRatio;
+  final double? topGap;
+
+  /// The ratio of screen height reserved for the gap at the top.
+  @Deprecated('Use topGap instead.')
+  double? get topGapRatio => topGap;
 
   /// Additional constraints to apply to the sheet.
   ///
@@ -205,74 +225,22 @@ class CupertinoSheetPage<T> extends Page<T> {
 
   @override
   Route<T> createRoute(BuildContext context) {
-    // Handle nested navigation setup if requested
-    var effectiveBuilder = builder;
-
-    if (useNestedNavigation) {
-      final navigatorKey = nestedNavigatorKey ?? GlobalKey<NavigatorState>();
-
-      effectiveBuilder = (BuildContext context) {
-        return NavigatorPopHandler(
-          onPopWithResult: (T? result) {
-            navigatorKey.currentState?.maybePop();
-          },
-          child: Navigator(
-            key: navigatorKey,
-            initialRoute: '/',
-            onGenerateInitialRoutes:
-                (NavigatorState navigator, String initialRouteName) {
-              return <Route<void>>[
-                CupertinoPageRoute<void>(
-                  builder: (BuildContext context) {
-                    final content = builder(context);
-
-                    // Handle back gestures for nested navigation
-                    return PopScope(
-                      canPop: false,
-                      onPopInvokedWithResult:
-                          (bool didPop, Object? result) async {
-                        if (didPop) {
-                          return;
-                        }
-
-                        // Check custom handler first
-                        if (onWillPop != null) {
-                          final shouldPop = await onWillPop!();
-                          if (shouldPop && context.mounted) {
-                            Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pop(result);
-                          }
-                        } else {
-                          Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          ).pop(result);
-                        }
-                      },
-                      child: content,
-                    );
-                  },
-                ),
-              ];
-            },
-          ),
-        );
-      };
-    }
+    final navigatorKey = useNestedNavigation
+        ? nestedNavigatorKey ?? GlobalKey<NavigatorState>()
+        : null;
 
     return _CustomizedCupertinoSheetRoute<T>(
-      builder: effectiveBuilder,
+      scrollableBuilder: (context, scrollController) {
+        final content = useNestedNavigation
+            ? _buildNestedNavigator(navigatorKey!, scrollController)
+            : _buildContent(context, scrollController);
+
+        return _applyCustomizations(context, content);
+      },
       settings: this,
       enableDrag: enableDrag,
-      // Appearance
-      backgroundColor: backgroundColor,
-      shape: shape,
-      showDragHandle: showDragHandle,
-      topGapRatio: topGapRatio,
-      constraints: constraints,
-      useSafeArea: useSafeArea,
+      showDragHandle: showDragHandle ?? false,
+      topGap: topGap,
       // Behavior
       isDismissible: isDismissible,
       onBarrierTap: onBarrierTap,
@@ -283,21 +251,100 @@ class CupertinoSheetPage<T> extends Page<T> {
       customBarrierLabel: barrierLabel,
     );
   }
+
+  Widget _buildContent(
+    BuildContext context,
+    ScrollController scrollController,
+  ) {
+    return scrollableBuilder?.call(context, scrollController) ??
+        builder!(context);
+  }
+
+  Widget _buildNestedNavigator(
+    GlobalKey<NavigatorState> navigatorKey,
+    ScrollController scrollController,
+  ) {
+    return NavigatorPopHandler(
+      onPopWithResult: (T? result) {
+        navigatorKey.currentState?.maybePop();
+      },
+      child: Navigator(
+        key: navigatorKey,
+        initialRoute: '/',
+        onGenerateInitialRoutes:
+            (NavigatorState navigator, String initialRouteName) {
+              return <Route<void>>[
+                CupertinoPageRoute<void>(
+                  builder: (BuildContext context) {
+                    final content = _buildContent(context, scrollController);
+
+                    return PopScope(
+                      canPop: false,
+                      onPopInvokedWithResult:
+                          (bool didPop, Object? result) async {
+                            if (didPop) {
+                              return;
+                            }
+
+                            if (onWillPop != null) {
+                              final shouldPop = await onWillPop!();
+                              if (shouldPop && context.mounted) {
+                                Navigator.of(
+                                  context,
+                                  rootNavigator: true,
+                                ).pop(result);
+                              }
+                            } else {
+                              Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pop(result);
+                            }
+                          },
+                      child: content,
+                    );
+                  },
+                ),
+              ];
+            },
+      ),
+    );
+  }
+
+  Widget _applyCustomizations(BuildContext context, Widget widget) {
+    var content = widget;
+
+    if (useSafeArea) {
+      content = SafeArea(child: content);
+    }
+
+    if (constraints != null) {
+      content = ConstrainedBox(constraints: constraints!, child: content);
+    }
+
+    if (backgroundColor != null || shape != null) {
+      content = Material(
+        color:
+            backgroundColor ??
+            CupertinoColors.systemBackground.resolveFrom(context),
+        shape: shape,
+        clipBehavior: shape == null ? Clip.none : Clip.antiAlias,
+        child: content,
+      );
+    }
+
+    return content;
+  }
 }
 
 /// Internal route that extends [CupertinoSheetRoute] with customization support.
 class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
   _CustomizedCupertinoSheetRoute({
-    required super.builder,
-    required super.settings,
-    required super.enableDrag,
-    // Appearance
-    this.backgroundColor,
-    this.shape,
-    bool? showDragHandle,
-    this.topGapRatio,
-    this.constraints,
-    this.useSafeArea = false,
+    required ScrollableWidgetBuilder scrollableBuilder,
+    required RouteSettings settings,
+    required bool enableDrag,
+    required super.showDragHandle,
+    super.topGap,
     // Behavior
     this.isDismissible = true,
     this.onBarrierTap,
@@ -306,15 +353,11 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     this.customBarrierColor,
     this.customBarrierDismissible,
     this.customBarrierLabel,
-  }) : _showDragHandle = showDragHandle;
-
-  // Appearance customization
-  final Color? backgroundColor;
-  final ShapeBorder? shape;
-  final bool? _showDragHandle;
-  final double? topGapRatio;
-  final BoxConstraints? constraints;
-  final bool useSafeArea;
+  }) : super(
+         scrollableBuilder: scrollableBuilder,
+         settings: settings,
+         enableDrag: enableDrag && isDismissible,
+       );
 
   // Behavior customization
   final bool isDismissible;
@@ -335,96 +378,10 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
 
   @override
   bool get barrierDismissible =>
-      customBarrierDismissible ?? super.barrierDismissible;
+      isDismissible && (customBarrierDismissible ?? super.barrierDismissible);
 
   @override
   String? get barrierLabel => customBarrierLabel ?? super.barrierLabel;
-
-  @override
-  Widget buildContent(BuildContext context) {
-    var content = builder!(context);
-
-    // Apply appearance customizations
-    content = _applyCustomizations(context, content);
-
-    // Wrap with the standard sheet structure
-    final bottomPadding =
-        MediaQuery.sizeOf(context).height * (topGapRatio ?? 0.08);
-
-    return MediaQuery.removePadding(
-      context: context,
-      removeTop: true,
-      removeBottom: true,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomPadding),
-        child: CupertinoUserInterfaceLevel(
-          data: CupertinoUserInterfaceLevelData.elevated,
-          child: content,
-        ),
-      ),
-    );
-  }
-
-  Widget _applyCustomizations(BuildContext context, Widget widget) {
-    var content = widget;
-    // Apply SafeArea first if requested
-    if (useSafeArea) {
-      content = SafeArea(child: content);
-    }
-
-    // Apply constraints
-    if (constraints != null) {
-      content = ConstrainedBox(constraints: constraints!, child: content);
-    }
-
-    // Wrap in Material for appearance customization
-    if (backgroundColor != null || shape != null) {
-      content = Material(
-        color: backgroundColor ??
-            CupertinoColors.systemBackground.resolveFrom(context),
-        shape: shape ??
-            const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-        clipBehavior: Clip.antiAlias,
-        child: content,
-      );
-    } else {
-      // Apply default corner radius
-      content = ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        child: content,
-      );
-    }
-
-    // Add drag handle
-    if (_showDragHandle ?? false) {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildDragHandle(context),
-          Flexible(child: content),
-        ],
-      );
-    }
-
-    return content;
-  }
-
-  Widget _buildDragHandle(BuildContext context) {
-    return Container(
-      height: 22,
-      alignment: Alignment.center,
-      child: Container(
-        width: 36,
-        height: 4,
-        decoration: BoxDecoration(
-          color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget buildModalBarrier() {

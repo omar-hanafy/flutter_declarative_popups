@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0] - 2026-05-20
+
+- BREAKING: Raised the minimum SDK requirements to Flutter 3.44.0 and Dart 3.12.0.
+- BREAKING: `CupertinoSheetPage.builder` is now nullable because `scrollableBuilder` can be supplied instead.
+- Added `CupertinoSheetPage.scrollableBuilder` and wired it to Flutter's native `CupertinoSheetRoute.scrollableBuilder` for coordinated scroll-to-dismiss behavior.
+- Added `topGap` support and deprecated `topGapRatio`.
+- Delegated Cupertino sheet `showDragHandle` and `topGap` behavior to Flutter's native `CupertinoSheetRoute`.
+- Added `scrollableBuilder`, `topGap`, `key`, `name`, and `arguments` passthroughs to `NavigatorState.showCupertinoSheet`.
+- Added `scrollableBuilder` and `topGap` passthroughs to `BuildContext.createCupertinoSheetPage`.
+
 ## [0.3.3] - 2026-02-17
 
 - Fixed GitHub Actions publish flow to use the official pub.dev trusted publisher OIDC workflow.

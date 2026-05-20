@@ -229,6 +229,39 @@ void main() {
     });
   });
 
+  group('CupertinoSheetPage', () {
+    testWidgets('creates a native scrollable Cupertino sheet route', (
+      tester,
+    ) async {
+      await tester.pumpWidget(MaterialApp(home: Container()));
+
+      final testPage = CupertinoSheetPage<String>(
+        scrollableBuilder: (context, scrollController) {
+          return ListView(
+            controller: scrollController,
+            children: const [Text('Scrollable Content')],
+          );
+        },
+        showDragHandle: true,
+        topGap: 0.2,
+        name: 'sheet',
+        arguments: 'details',
+      );
+
+      final context = tester.element(find.byType(Container));
+      final route = testPage.createRoute(context);
+
+      expect(route, isA<CupertinoSheetRoute<String>>());
+
+      final sheetRoute = route as CupertinoSheetRoute<String>;
+      expect(sheetRoute.scrollableBuilder, isNotNull);
+      expect(sheetRoute.showDragHandle, true);
+      expect(sheetRoute.topGap, 0.2);
+      expect(sheetRoute.settings.name, 'sheet');
+      expect(sheetRoute.settings.arguments, 'details');
+    });
+  });
+
   group('Extension Methods', () {
     testWidgets('pushDialogPage works correctly', (tester) async {
       String? result;
@@ -287,7 +320,9 @@ void main() {
                         actions: [
                           CupertinoDialogAction(
                             onPressed: () => Navigator.pop(
-                                context, 'cupertino_extension_result'),
+                              context,
+                              'cupertino_extension_result',
+                            ),
                             child: const Text('OK'),
                           ),
                         ],
@@ -360,11 +395,7 @@ void main() {
 
       final testPage = RawDialogPage<String>(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return const Center(
-            child: Material(
-              child: Text('Raw Dialog'),
-            ),
-          );
+          return const Center(child: Material(child: Text('Raw Dialog')));
         },
         barrierLabel: 'Dismiss',
       );
@@ -378,32 +409,24 @@ void main() {
 }
 
 Widget _buildTestDialog(BuildContext context) {
-  return const AlertDialog(
-    title: Text('Test Dialog'),
-  );
+  return const AlertDialog(title: Text('Test Dialog'));
 }
 
 Widget _buildTestBottomSheet(BuildContext context) {
   return const SizedBox(
     height: 200,
-    child: Center(
-      child: Text('Test Bottom Sheet'),
-    ),
+    child: Center(child: Text('Test Bottom Sheet')),
   );
 }
 
 Widget _buildTestCupertinoDialog(BuildContext context) {
-  return const CupertinoAlertDialog(
-    title: Text('Test Cupertino Dialog'),
-  );
+  return const CupertinoAlertDialog(title: Text('Test Cupertino Dialog'));
 }
 
 Widget _buildTestCupertinoPopup(BuildContext context) {
   return Container(
     height: 200,
     color: Colors.white,
-    child: const Center(
-      child: Text('Test Cupertino Popup'),
-    ),
+    child: const Center(child: Text('Test Cupertino Popup')),
   );
 }

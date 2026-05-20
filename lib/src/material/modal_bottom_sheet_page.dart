@@ -107,12 +107,14 @@ class ModalBottomSheetPage<T> extends Page<T> {
       clipBehavior: clipBehavior,
       barrierLabel:
           barrierLabel ?? MaterialLocalizations.of(context).scrimLabel,
-      barrierOnTapHint: barrierOnTapHint ??
+      barrierOnTapHint:
+          barrierOnTapHint ??
           MaterialLocalizations.of(
             context,
           ).scrimOnTapHint(MaterialLocalizations.of(context).bottomSheetLabel),
       capturedThemes: capturedThemes,
-      modalBarrierColor: modalBarrierColor ??
+      modalBarrierColor:
+          modalBarrierColor ??
           Theme.of(context).bottomSheetTheme.modalBarrierColor,
       isDismissible: isDismissible,
       enableDrag: enableDrag,

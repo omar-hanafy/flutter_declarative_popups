@@ -4,7 +4,7 @@
 Material, Cupertino, and fully‑custom pop‑ups with type‑safe results, deep‑linking, and state restoration.
 
 [![Pub Version](https://img.shields.io/pub/v/flutter_declarative_popups.svg)](https://pub.dev/packages/flutter_declarative_popups) 
-[![Flutter](https://img.shields.io/badge/flutter-3.26%2B-blue)](https://flutter.dev/) ![Null‑safety](https://img.shields.io/badge/null--safety-%E2%9C%93-success)
+[![Flutter](https://img.shields.io/badge/flutter-3.44%2B-blue)](https://flutter.dev/) ![Null‑safety](https://img.shields.io/badge/null--safety-%E2%9C%93-success)
 
 > `flutter_declarative_popups` lets you treat pop‑ups like *pages* so they play nicely with Navigator 2.0, `go_router`, `auto_route`, and the browser URL.
 
@@ -28,7 +28,7 @@ Material, Cupertino, and fully‑custom pop‑ups with type‑safe results, deep
 ```yaml
 # pubspec.yaml
 dependencies:
-  flutter_declarative_popups: ^0.3.3
+  flutter_declarative_popups: ^0.4.0
 ```
 
 ```dart
@@ -97,7 +97,7 @@ More complete examples live in the **[`example/`](example/)** folder:
 | `ModalBottomSheetPage<T>`    | Material sheet with drag‑handle & custom shape support                               |
 | `CupertinoDialogPage<T>`     | iOS‑style alert dialog                                                               |
 | `CupertinoModalPopupPage<T>` | iOS action sheet / picker style                                                      |
-| `CupertinoSheetPage<T>`      | iOS sheet with drag‑to‑dismiss gesture (requires root navigator)                     |
+| `CupertinoSheetPage<T>`      | iOS sheet with native scroll-to-dismiss support (requires root navigator)            |
 | `RawDialogPage<T>`           | Bring‑your‑own builder for complete control                                          |
 
 All pages extend **`Page<T>`**, so they slot straight into any declarative navigator.
@@ -108,7 +108,7 @@ All pages extend **`Page<T>`**, so they slot straight into any declarative navig
 
 | Package                       | Min Flutter | Min Dart | Notes                                                           |
 |-------------------------------|-------------|----------|------------------------------------------------------------------|
-| flutter_declarative_popups    | 3.26+       | 3.5+     | Uses `CupertinoSheetRoute`, barrier semantics, `AnimationStyle` |
+| flutter_declarative_popups    | 3.44+       | 3.12+    | Uses `CupertinoSheetRoute.scrollableBuilder`, barrier semantics, `AnimationStyle` |
 
 ------
 
