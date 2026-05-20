@@ -80,11 +80,6 @@ class CupertinoSheetPage<T> extends Page<T> {
     this.enableDrag = true,
     this.isDismissible = true,
     this.onBarrierTap,
-    // Route properties (rarely needed)
-    this.transitionDuration,
-    this.barrierColor,
-    this.barrierDismissible,
-    this.barrierLabel,
     // Page properties
     super.key,
     super.name,
@@ -191,30 +186,6 @@ class CupertinoSheetPage<T> extends Page<T> {
   /// sheets have a transparent, non-dismissible barrier.
   final VoidCallback? onBarrierTap;
 
-  /// Custom transition duration for the sheet animation.
-  ///
-  /// Defaults to 500ms to match iOS behavior. Only change this if you
-  /// need custom animation timing.
-  final Duration? transitionDuration;
-
-  /// The color of the modal barrier (area outside the sheet).
-  ///
-  /// Defaults to transparent to match iOS behavior. Set to a semi-transparent
-  /// black for a dimmed background effect.
-  final Color? barrierColor;
-
-  /// Whether tapping the barrier dismisses the sheet.
-  ///
-  /// Defaults to `false` to match iOS behavior. iOS sheets typically
-  /// require dragging or an explicit close button.
-  final bool? barrierDismissible;
-
-  /// Semantic label for the barrier.
-  ///
-  /// Used by screen readers to describe the barrier. Only relevant if
-  /// [barrierColor] is not fully transparent.
-  final String? barrierLabel;
-
   @override
   Route<T> createRoute(BuildContext context) {
     final navigatorKey = useNestedNavigation
@@ -233,14 +204,8 @@ class CupertinoSheetPage<T> extends Page<T> {
       enableDrag: enableDrag,
       showDragHandle: showDragHandle,
       topGap: topGap,
-      // Behavior
       isDismissible: isDismissible,
       onBarrierTap: onBarrierTap,
-      // Route overrides
-      customTransitionDuration: transitionDuration,
-      customBarrierColor: barrierColor,
-      customBarrierDismissible: barrierDismissible,
-      customBarrierLabel: barrierLabel,
     );
   }
 
@@ -346,43 +311,19 @@ class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
     required bool enableDrag,
     required super.showDragHandle,
     super.topGap,
-    // Behavior
     this.isDismissible = true,
     this.onBarrierTap,
-    // Route overrides
-    this.customTransitionDuration,
-    this.customBarrierColor,
-    this.customBarrierDismissible,
-    this.customBarrierLabel,
   }) : super(
          scrollableBuilder: scrollableBuilder,
          settings: settings,
          enableDrag: enableDrag && isDismissible,
        );
 
-  // Behavior customization
   final bool isDismissible;
   final VoidCallback? onBarrierTap;
 
-  // Route property overrides
-  final Duration? customTransitionDuration;
-  final Color? customBarrierColor;
-  final bool? customBarrierDismissible;
-  final String? customBarrierLabel;
-
   @override
-  Duration get transitionDuration =>
-      customTransitionDuration ?? super.transitionDuration;
-
-  @override
-  Color? get barrierColor => customBarrierColor ?? super.barrierColor;
-
-  @override
-  bool get barrierDismissible =>
-      isDismissible && (customBarrierDismissible ?? super.barrierDismissible);
-
-  @override
-  String? get barrierLabel => customBarrierLabel ?? super.barrierLabel;
+  bool get barrierDismissible => isDismissible && super.barrierDismissible;
 
   @override
   Widget buildModalBarrier() {
