@@ -4,6 +4,8 @@ Thank you for considering contributing to Flutter Declarative Popups! This docum
 
 ## 🚀 Getting Started
 
+Use Flutter 3.47.7 or newer with Dart 3.13.5 or newer.
+
 1. Fork the repository
 2. Clone your fork:
    ```bash
@@ -12,7 +14,7 @@ Thank you for considering contributing to Flutter Declarative Popups! This docum
    ```
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/omarhanafy/flutter_declarative_popups.git
+   git remote add upstream https://github.com/omar-hanafy/flutter_declarative_popups.git
    ```
 4. Install dependencies:
    ```bash
@@ -63,8 +65,8 @@ git commit -m "docs: update README with new examples"
 Before pushing, ensure all tests pass:
 
 ```bash
-# Format code
-dart format .
+# Check formatting
+dart format --output=none --set-exit-if-changed .
 
 # Analyze code
 flutter analyze
@@ -72,8 +74,17 @@ flutter analyze
 # Run tests
 flutter test
 
+# Run navigation flows in the macOS example app
+cd example
+flutter test integration_test -d macos
+cd ..
+
 # Check publish readiness
-flutter pub publish --dry-run
+dart pub publish --dry-run
+
+# Require the full Pana score
+dart pub global activate pana 0.23.19
+dart pub global run pana --exit-code-threshold 0 .
 ```
 
 ### 5. Push and Create Pull Request
@@ -134,41 +145,26 @@ Update version in:
 
 ### Pull Request Checks
 
-All PRs must pass:
-1. **Code formatting** - `dart format`
-2. **Static analysis** - `flutter analyze`
-3. **Tests** - `flutter test`
-4. **Build** - Example app builds on all platforms
-5. **PR title** - Follows conventional commits
+CI checks formatting, static analysis, and tests on the latest stable Flutter
+SDK. It also analyzes and tests the lowest allowed dependency versions on
+Flutter 3.47.7. Beta checks are advisory. Pana requires the full score, and the
+publication dry-run must pass without warnings.
 
-### Auto-Publishing
+PRs targeting `main` must contain a stable version. PRs targeting `dev` must
+contain a prerelease version, such as `1.1.0-dev.1`. These lane checks apply even
+when the PR does not change `pubspec.yaml`.
 
-When a PR is merged to main with a version tag:
+### Releases
 
-1. Admin creates and pushes a version tag:
-   ```bash
-   git tag v0.1.1
-   git push origin v0.1.1
-   ```
+Prepare the version and changelog on a working branch and open a PR into the
+appropriate release lane. A merged version change creates the immutable tag
+`flutter_declarative_popups-v<version>` and a GitHub release. The tag push triggers
+publication through pub.dev Trusted Publisher OIDC. GitHub release notes use
+the matching changelog section and must not contain user or team mentions.
 
-2. GitHub Actions automatically:
-   - Runs all tests
-   - Publishes to pub.dev
-   - Creates a GitHub release
-
-## 🔒 Required Secrets
-
-For maintainers, the following secrets must be set in GitHub:
-
-1. **PUB_DEV_ACCESS_TOKEN**: OAuth access token for pub.dev
-2. **PUB_DEV_REFRESH_TOKEN**: OAuth refresh token for pub.dev
-
-To obtain these tokens:
-```bash
-flutter pub login
-# Follow the OAuth flow
-# Tokens are saved in ~/.config/dart/pub-credentials.json
-```
+Use `bash scripts/release.sh main` or `bash scripts/release.sh dev` for the local
+preflight. Release tags are created by the reviewed auto-release workflow.
+See [SETUP.md](SETUP.md) for repository configuration and release monitoring.
 
 ## 📝 Code Style Guidelines
 
@@ -202,7 +198,7 @@ group('DialogPage', () {
 
 ## 🤝 Code Review Process
 
-1. All PRs require at least one approval
+1. Follow the target branch's configured review requirements
 2. Address all review comments
 3. Keep discussions professional and constructive
 4. Be open to feedback and suggestions

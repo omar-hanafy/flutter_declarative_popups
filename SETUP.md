@@ -1,190 +1,100 @@
-# Repository Setup Guide
+# Repository setup
 
-This guide explains how to configure your GitHub repository for the automated CI/CD pipeline.
+The release pipeline uses pull requests to `main` for stable versions and to
+`dev` for prereleases. A version change merged into either lane creates the tag
+`flutter_declarative_popups-v<version>`, a GitHub release, and a tag-triggered
+publication to pub.dev. Dependency-only edits keep the existing version and do
+not create another tag. GitHub release notes come from the matching reviewed
+changelog section. The workflow rejects a missing, empty, duplicate, or
+author-mentioning section before creating a tag.
 
-## 🔧 GitHub Repository Settings
+## Protect the release lanes
 
-### 1. Branch Protection Rules
+Configure branch protection or rulesets for each active release lane:
 
-Go to **Settings → Branches** and add a rule for `main` branch:
+- Require pull requests, passing checks, and resolved review conversations.
+- Prevent force pushes and deletion, and enforce the policy for administrators.
+- Preserve any existing review, code-owner, signature, deployment, and bypass rules.
 
-#### Required Settings:
-- ✅ **Require a pull request before merging**
-  - ✅ Require approvals: 1
-  - ✅ Dismiss stale pull request approvals when new commits are pushed
-  - ✅ Require review from CODEOWNERS (optional)
+Use check contexts from a successful PR when configuring required checks. The
+workflows define stable formatting/analysis/tests, minimum Flutter
+analysis/tests, Pana, and publication dry-run jobs. The beta job is advisory.
+Do not configure example build or PR-title checks unless workflows actually
+provide them.
 
-- ✅ **Require status checks to pass before merging**
-  - ✅ Require branches to be up to date before merging
-  - Required status checks:
-    - `Analyze`
-    - `Test`
-    - `Build Example App (ubuntu-latest)`
-    - `Build Example App (macos-latest)`
-    - `Build Example App (windows-latest)`
-    - `All Checks Passed`
+Before enabling `dev`, create it through the repository's permitted process,
+ensure its `pubspec.yaml` version has a prerelease suffix, and protect the lane.
+The lane check runs on every PR targeting `main` or `dev` and on every push to
+those lanes, even when `pubspec.yaml` is unchanged.
 
-- ✅ **Require conversation resolution before merging**
-- ✅ **Require linear history** (optional, for cleaner git history)
-- ✅ **Include administrators** (optional, enforces rules for admins too)
+## Configure tag authentication
 
-### 2. Repository Secrets
+Store a repository-scoped fine-grained GitHub PAT as the Actions secret
+`TAG_PUSH_PAT`. It needs Contents read/write access to this repository and must
+be permitted by the repository's release-tag ruleset.
 
-Go to **Settings → Secrets and variables → Actions** and add:
+The auto-release job uses this identity to push the release tag. A tag pushed
+with `GITHUB_TOKEN` would not trigger the publication workflow. The PAT is used
+only for the tag push; the GitHub release uses the job's `GITHUB_TOKEN`.
 
-#### Required Secrets for Publishing:
+Protect `flutter_declarative_popups-v*` tags according to the repository's
+release policy. Published versions and release tags are immutable.
 
-1. **PUB_DEV_ACCESS_TOKEN**
-   - Get from `~/.config/dart/pub-credentials.json` after running `flutter pub login`
-   - The `accessToken` field
+## Configure pub.dev Trusted Publisher
 
-2. **PUB_DEV_REFRESH_TOKEN**
-   - Get from `~/.config/dart/pub-credentials.json` after running `flutter pub login`
-   - The `refreshToken` field
+For an existing package, open the
+[package admin page](https://pub.dev/packages/flutter_declarative_popups/admin)
+and enable automated publishing from GitHub Actions with:
 
-#### How to Get pub.dev Tokens:
+- Repository: `omar-hanafy/flutter_declarative_popups`
+- Tag pattern: `flutter_declarative_popups-v{{version}}`
 
-```bash
-# 1. Login to pub.dev
-flutter pub login
+The publication workflow calls the official
+`dart-lang/setup-dart/.github/workflows/publish.yml@v1` reusable workflow and
+requests an OIDC token. pub.dev accepts this path only for tag-push events.
+Do not add branch or manual triggers to `publish.yml`.
 
-# 2. Follow the OAuth flow in your browser
+If an environment is required on pub.dev, configure that same environment in
+GitHub and pass its name to the reusable workflow. Otherwise leave it unset.
+A package's first version must be published manually by an authorized uploader
+before automated publishing can be enabled.
 
-# 3. Get the tokens (macOS/Linux)
-cat ~/.config/dart/pub-credentials.json
+See [Dart's automated publishing documentation](https://dart.dev/tools/pub/automated-publishing).
 
-# 3. Get the tokens (Windows)
-type %APPDATA%\dart\pub-credentials.json
-```
+## Local and hosted checks
 
-### 3. GitHub Actions Permissions
+Use Flutter 3.47.7 or newer, including Dart 3.13.5 or newer. CI checks the latest
+stable SDK and separately resolves the lowest allowed dependencies on Flutter
+3.47.7. Beta analysis/tests provide early compatibility feedback.
 
-Go to **Settings → Actions → General**:
-
-- **Actions permissions**: Allow all actions and reusable workflows
-- **Workflow permissions**: 
-  - ✅ Read and write permissions
-  - ✅ Allow GitHub Actions to create and approve pull requests
-
-### 4. Labels Setup
-
-Create these labels in **Issues → Labels**:
-
-**Size Labels:**
-- `size/XS` - color: #009900
-- `size/S` - color: #77bb00
-- `size/M` - color: #eebb00
-- `size/L` - color: #ee9900
-- `size/XL` - color: #ee5500
-
-**Category Labels:**
-- `documentation` - color: #0075ca
-- `example` - color: #d73a4a
-- `test` - color: #0e8a16
-- `ci` - color: #000000
-- `material` - color: #1976d2
-- `cupertino` - color: #007aff
-- `core` - color: #5319e7
-- `dependencies` - color: #0366d6
-
-**Status Labels:**
-- `ready for review` - color: #0e8a16
-- `needs changes` - color: #e11d21
-- `blocked` - color: #b60205
-
-### 5. GitHub Pages (Optional)
-
-If you want to host documentation:
-
-1. Go to **Settings → Pages**
-2. Source: Deploy from a branch
-3. Branch: `gh-pages` / `docs` folder
-4. Enforce HTTPS: ✅
-
-## 🚀 Workflow Overview
-
-### Pull Request Flow
-
-1. **Developer creates PR** → triggers:
-   - CI checks (format, analyze, test, build)
-   - PR title validation
-   - Auto-labeling
-   - Size labeling
-   - Version and changelog checks
-
-2. **Review process**:
-   - Requires 1 approval
-   - All CI checks must pass
-   - Conversations must be resolved
-
-3. **Merge to main**:
-   - Squash and merge recommended
-   - Delete branch after merge
-
-### Release Flow
-
-1. **Manual Release** (Recommended):
-   ```bash
-   cd /path/to/flutter_declarative_popups
-   ./scripts/release.sh minor  # or major/patch
-   ```
-
-2. **Auto-publish triggers when**:
-   - A tag matching `flutter_declarative_popups-v*.*.*` is pushed
-   - GitHub Actions will:
-     - Run all tests
-     - Publish to pub.dev
-     - Create GitHub release
-     - Upload artifacts
-
-### Alternative: Manual Tag Creation
+Prepare the intended version and changelog on a working branch, then run:
 
 ```bash
-# After merging PR to main
-git checkout main
-git pull origin main
-
-# Create and push tag
-git tag flutter_declarative_popups-v0.3.1
-git push origin flutter_declarative_popups-v0.3.1
+bash scripts/release.sh main # stable release PR
+# Or, for a prerelease PR:
+bash scripts/release.sh dev
 ```
 
-## 📊 Monitoring
+This runs dependency resolution, check-only formatting, analysis, tests,
+publication dry-run, and Pana 0.23.19 with its full-score exit threshold. The
+publication checks require the reviewed changes to be committed so that the
+publication payload is clean. The script does not commit, push, tag, or publish.
 
-### Check CI/CD Status
+For changes to popup behavior or example navigation, also run the example's
+app integration checks with `cd example && flutter test integration_test -d macos`.
+These exercise a running app; the root widget tests run separately.
 
-1. **Actions Tab**: Monitor workflow runs
-2. **Pull Requests**: Check status checks
-3. **Releases**: Verify GitHub releases
-4. **pub.dev**: Confirm package publication
+After merging the release PR, correlate the Auto release run with its merged
+SHA, confirm the tag targets that SHA, and watch the Publish to pub.dev run for
+that exact tag. Finally verify that pub.dev exposes the intended version.
+A passing local check or GitHub release alone does not prove publication.
 
-### Troubleshooting
+## Failure recovery
 
-**CI Failing?**
-- Check Actions tab for detailed logs
-- Ensure all tests pass locally
-- Verify code formatting: `dart format .`
+Read the failing run's logs before changing anything. Confirm the PAT has not
+expired, the Trusted Publisher repository/tag pattern matches, and the run was
+triggered by the exact release tag.
 
-**Publish Failing?**
-- Verify pub.dev tokens are correct
-- Check `flutter pub publish --dry-run` locally
-- Ensure version is bumped
-
-**PR Checks Stuck?**
-- Try pushing an empty commit: `git commit --allow-empty -m "Trigger CI"`
-- Check if base branch is up to date
-
-## 🔐 Security Best Practices
-
-1. **Never commit tokens** to the repository
-2. **Rotate tokens periodically** (every 6 months)
-3. **Use branch protection** to prevent direct pushes to main
-4. **Review dependencies** in pull requests
-5. **Enable Dependabot** for security updates
-
-## 📚 Additional Resources
-
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [pub.dev Publishing Guide](https://dart.dev/tools/pub/publishing)
-- [Conventional Commits](https://www.conventionalcommits.org/)
-- [Semantic Versioning](https://semver.org/)
+Keep a failed tag unchanged. Repair the cause, choose a new version, and release
+through another PR. Do not delete, move, or reuse a release tag, bypass warnings,
+or publish directly from a protected branch.

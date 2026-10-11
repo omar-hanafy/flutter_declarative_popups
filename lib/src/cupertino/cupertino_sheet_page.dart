@@ -3,11 +3,12 @@
 // found in the LICENSE file.
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_declarative_popups/src/utils/page_route.dart';
 
 /// A declarative [Page] that shows its content inside a Cupertino‑style sheet.
 ///
 /// ### Why this wrapper exists
-/// Flutter’s **[`CupertinoSheetRoute`][]** (added in the SDK around v3.26) is a
+/// Flutter’s **[`CupertinoSheetRoute`][]** is a
 /// fully‑featured iOS sheet that supports stacking, nested navigation, and a
 /// native drag‑to‑dismiss gesture.  The route, however, is **imperative‑only** –
 /// you can `Navigator.push` it, but you cannot place it directly in a
@@ -17,24 +18,9 @@ import 'package:flutter/cupertino.dart';
 /// declarative navigation while keeping 100% of the SDK’s animation and
 /// gesture logic.
 ///
-/// ### ⚠️  Drag‑to‑dismiss caveat
-/// `CupertinoSheetRoute`’s private gesture controller calls:
-///
-/// ```dart
-/// Navigator.of(context, rootNavigator: true).pop();
-/// ```
-///
-/// That means **the sheet will always pop the _root_ `Navigator`**.  If you push
-/// the sheet inside a *nested* navigator the drag gesture will ascend the tree
-/// and remove the entire screen.
-///
-/// **To avoid surprises:**
-/// * Push the sheet on the root navigator (`rootNavigator: true`), **or**
-/// * Drive the root navigator declaratively and add this `CupertinoSheetPage`
-///   to its `pages:` list, as shown in the example below.
-///
-/// If you really need the sheet inside a child navigator you must fork
-/// `CupertinoSheetRoute` and change that `rootNavigator: true` call.
+/// Drag dismissal uses the navigator that owns the sheet route. When closing a
+/// sheet in a nested navigator programmatically, use that navigator rather than
+/// [CupertinoSheetRoute.popSheet], whose helper targets the root navigator.
 ///
 /// ### Example (declarative)
 /// ```dart
@@ -145,6 +131,10 @@ class CupertinoSheetPage<T> extends Page<T> {
   ///
   /// If null, defers to [CupertinoSheetRoute]'s default top gap (matching
   /// native iOS behavior). Set to 0.0 for a full-screen sheet.
+  ///
+  /// Updating between two explicit values preserves the route and content
+  /// state. Changing between null and an explicit value replaces the route,
+  /// because the SDK initializes its transition mode from that distinction.
   final double? topGap;
 
   /// Additional constraints to apply to the sheet.
@@ -165,10 +155,11 @@ class CupertinoSheetPage<T> extends Page<T> {
   /// explicit dismissal (e.g., forms that must be completed).
   final bool enableDrag;
 
-  /// Whether the sheet can be dismissed at all (by drag or programmatically).
+  /// Whether the sheet can be dismissed by dragging or tapping its barrier.
   ///
-  /// When `false`, the sheet becomes truly modal and can only be dismissed
-  /// by calling Navigator.pop() with `rootNavigator: true`.
+  /// When false, these user interactions are disabled. Use [Page.canPop] or
+  /// [PopScope] to also block back navigation. [Navigator.pop] can still close
+  /// the sheet explicitly.
   ///
   /// Defaults to `true`.
   final bool isDismissible;
@@ -177,31 +168,23 @@ class CupertinoSheetPage<T> extends Page<T> {
   ///
   /// When provided, this callback replaces the default dismiss behavior; the
   /// sheet will not pop unless the callback itself pops the navigator. Only
-  /// invoked when the barrier is dismissible. Note that by default, iOS
-  /// sheets have a transparent, non-dismissible barrier.
+  /// invoked when [isDismissible] is true. Without this callback, the native
+  /// transparent barrier remains non-dismissible.
   final VoidCallback? onBarrierTap;
 
   @override
   Route<T> createRoute(BuildContext context) {
-    final navigatorKey = useNestedNavigation
-        ? nestedNavigatorKey ?? GlobalKey<NavigatorState>()
-        : null;
+    return _CupertinoSheetRoute<T>(page: this, context: context);
+  }
 
-    return _CustomizedCupertinoSheetRoute<T>(
-      scrollableBuilder: (context, scrollController) {
-        final content = useNestedNavigation
-            ? _buildNestedNavigator(navigatorKey!, scrollController)
-            : _buildContent(context, scrollController);
-
-        return _applyCustomizations(context, content);
-      },
-      settings: this,
-      enableDrag: enableDrag,
-      showDragHandle: showDragHandle,
-      topGap: topGap,
-      isDismissible: isDismissible,
-      onBarrierTap: onBarrierTap,
-    );
+  @override
+  bool canUpdate(Page<dynamic> other) {
+    if (!super.canUpdate(other)) {
+      return false;
+    }
+    final previous = other as CupertinoSheetPage<T>;
+    // The SDK caches whether a top gap was explicitly supplied for transitions.
+    return (topGap == null) == (previous.topGap == null);
   }
 
   Widget _buildContent(
@@ -212,10 +195,7 @@ class CupertinoSheetPage<T> extends Page<T> {
         builder!(context);
   }
 
-  Widget _buildNestedNavigator(
-    GlobalKey<NavigatorState> navigatorKey,
-    ScrollController scrollController,
-  ) {
+  Widget _buildNestedNavigator(GlobalKey<NavigatorState> navigatorKey) {
     return NavigatorPopHandler(
       onPopWithResult: (T? result) {
         navigatorKey.currentState?.maybePop();
@@ -227,9 +207,7 @@ class CupertinoSheetPage<T> extends Page<T> {
             (NavigatorState navigator, String initialRouteName) {
               return <Route<void>>[
                 CupertinoPageRoute<void>(
-                  builder: (BuildContext context) {
-                    return _buildContent(context, scrollController);
-                  },
+                  builder: (_) => _NestedSheetContent<T>(),
                 ),
               ];
             },
@@ -242,10 +220,6 @@ class CupertinoSheetPage<T> extends Page<T> {
 
     if (useSafeArea) {
       content = SafeArea(child: content);
-    }
-
-    if (constraints != null) {
-      content = ConstrainedBox(constraints: constraints!, child: content);
     }
 
     if (backgroundColor != null || shape != null) {
@@ -268,45 +242,122 @@ class CupertinoSheetPage<T> extends Page<T> {
       );
     }
 
+    if (constraints != null) {
+      // The native sheet supplies tight screen constraints. Align loosens them
+      // so that the requested maximum width and height can take effect.
+      content = Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(constraints: constraints!, child: content),
+      );
+    }
+
     return content;
   }
 }
 
-/// Internal route that extends [CupertinoSheetRoute] with customization support.
-class _CustomizedCupertinoSheetRoute<T> extends CupertinoSheetRoute<T> {
-  _CustomizedCupertinoSheetRoute({
-    required ScrollableWidgetBuilder scrollableBuilder,
-    required RouteSettings settings,
-    required bool enableDrag,
-    required super.showDragHandle,
-    super.topGap,
-    this.isDismissible = true,
-    this.onBarrierTap,
-  }) : super(
-         scrollableBuilder: scrollableBuilder,
-         settings: settings,
-         enableDrag: enableDrag && isDismissible,
-       );
+class _NestedSheetContentScope<T> extends InheritedWidget {
+  const _NestedSheetContentScope({
+    required this.page,
+    required this.scrollController,
+    required super.child,
+  });
 
-  final bool isDismissible;
-  final VoidCallback? onBarrierTap;
+  final CupertinoSheetPage<T> page;
+  final ScrollController scrollController;
 
   @override
-  bool get barrierDismissible => isDismissible && super.barrierDismissible;
+  bool updateShouldNotify(_NestedSheetContentScope<T> oldWidget) =>
+      page != oldWidget.page || scrollController != oldWidget.scrollController;
+}
+
+class _NestedSheetContent<T> extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<_NestedSheetContentScope<T>>()!;
+    return scope.page._buildContent(context, scope.scrollController);
+  }
+}
+
+class _CupertinoSheetRoute<T> extends CupertinoSheetRoute<T>
+    with PopupPageRoute<T, CupertinoSheetPage<T>>, PopupDismissalGuard<T> {
+  _CupertinoSheetRoute({
+    required CupertinoSheetPage<T> page,
+    required BuildContext context,
+  }) : _defaultBarrierLabel = CupertinoLocalizations.of(context)
+           .modalBarrierDismissLabel,
+       super(
+         scrollableBuilder: (context, controller) =>
+             page._buildContent(context, controller),
+         settings: page,
+         topGap: page.topGap,
+       );
+
+  final String _defaultBarrierLabel;
+  final GlobalKey<NavigatorState> _nestedNavigatorKey =
+      GlobalKey<NavigatorState>();
+  final ScrollController _nonDismissibleScrollController = ScrollController();
+
+  @override
+  ScrollableWidgetBuilder get scrollableBuilder => _buildSheetContent;
+
+  Widget _buildSheetContent(BuildContext context, ScrollController controller) {
+    // The SDK's scroll-linked controller can dismiss independently of the outer
+    // drag detector. Use an ordinary controller while dismissal is blocked.
+    final effectiveController = enableDrag
+        ? controller
+        : _nonDismissibleScrollController;
+    final content = page.useNestedNavigation
+        ? _NestedSheetContentScope<T>(
+            page: page,
+            scrollController: effectiveController,
+            child: page._buildNestedNavigator(
+              page.nestedNavigatorKey ?? _nestedNavigatorKey,
+            ),
+          )
+        : page._buildContent(context, effectiveController);
+    return page._applyCustomizations(context, preserveContent(content));
+  }
+
+  @override
+  bool get enableDrag =>
+      page.enableDrag && page.isDismissible && userDismissalAllowed;
+
+  @override
+  bool get showDragHandle => page.showDragHandle;
+
+  @override
+  double get topGap => page.topGap ?? super.topGap;
+
+  @override
+  bool get barrierDismissible =>
+      page.isDismissible && page.onBarrierTap != null;
+
+  @override
+  String? get barrierLabel => barrierDismissible ? _defaultBarrierLabel : null;
 
   @override
   Widget buildModalBarrier() {
-    if (onBarrierTap == null || !barrierDismissible) {
-      return super.buildModalBarrier();
+    final barrier = super.buildModalBarrier();
+    if (!barrierDismissible) {
+      return barrier;
     }
-    return GestureDetector(
-      onTap: onBarrierTap,
-      behavior: HitTestBehavior.opaque,
-      child: super.buildModalBarrier(),
+    return customizeModalBarrier(
+      barrier,
+      onDismiss: () {
+        if (isCurrent) {
+          page.onBarrierTap!();
+        }
+      },
     );
   }
 
   @override
-  bool get popGestureEnabled =>
-      enableDrag && isDismissible && super.popGestureEnabled;
+  bool get popGestureEnabled => enableDrag && super.popGestureEnabled;
+
+  @override
+  void dispose() {
+    _nonDismissibleScrollController.dispose();
+    super.dispose();
+  }
 }

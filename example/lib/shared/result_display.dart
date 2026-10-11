@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ResultDisplay extends StatelessWidget {
-  const ResultDisplay({
-    super.key,
-    required this.result,
-    this.onClear,
-  });
+  const ResultDisplay({super.key, required this.result, this.onClear});
 
   final String? result;
   final VoidCallback? onClear;
@@ -32,20 +28,16 @@ class ResultDisplay extends StatelessWidget {
                   Text(
                     'Last Result:',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSecondaryContainer,
-                        ),
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     result!,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSecondaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),

@@ -11,6 +11,8 @@ analyzer:
     missing_return: error
     # Allow self-reference in factory constructors
     recursive_constructor_redirect: ignore
+  exclude:
+    - build/**
 
 linter:
   rules:

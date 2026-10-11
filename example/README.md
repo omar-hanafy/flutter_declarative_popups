@@ -1,64 +1,27 @@
-# Flutter Declarative Popups - Routing Examples
+# Flutter Declarative Popups examples
 
-This example demonstrates how to use `flutter_declarative_popups` with different routing approaches in Flutter.
+Requires Flutter 3.47.7 / Dart 3.13.5 or newer.
 
-## Features
-
-The example includes implementations for:
-
-1. **Navigator 2.0** (Default) - Direct implementation using RouterDelegate and RouteInformationParser
-2. **Navigator 1.0** - Classic imperative navigation
-3. **go_router** - Official declarative routing package
-4. **auto_route** - Code generation based routing
-
-## Running the Example
-
-1. First, get the dependencies:
 ```bash
 flutter pub get
-```
-
-2. For auto_route, you need to run the code generator:
-```bash
-dart run build_runner build
-```
-
-3. Run the app:
-```bash
 flutter run
 ```
 
-## Switching Between Routing Implementations
+Use the menu in the app bar to switch between:
 
-Use the dropdown in the top-right corner of the app to switch between different routing implementations. The default is Navigator 2.0.
+- **Navigator 2.0**: a `RouterDelegate` and `RouteInformationParser` maintain a
+  page list, with results handled through `Page.onPopInvoked` and removal through
+  `Navigator.onDidRemovePage`.
+- **Navigator 1.0**: push a route created by a popup page and await its typed result.
+- **go_router 18**: define popup pages with `GoRoute.pageBuilder` and await
+  `context.push<String>()`.
 
-## Implementation Details
+The examples demonstrate Material dialogs and bottom sheets, Cupertino dialogs,
+and a Cupertino scrollable sheet in the Navigator examples. No code generation
+is required.
 
-### Navigator 2.0
-- Direct implementation of `RouterDelegate` and `RouteInformationParser`
-- Full control over the navigation stack
-- Each popup has its own path (e.g., `/dialog`, `/bottom-sheet`)
+Run the app integration checks on macOS:
 
-### Navigator 1.0
-- Shows both traditional imperative navigation and declarative pages
-- Uses `Navigator.push()` with popup pages
-- Note: Path-based navigation is not available
-
-### go_router
-- Each popup is defined as a route with its own path
-- Supports deep linking and browser history
-- Uses `context.push()` for navigation
-
-### auto_route
-- Requires code generation (`@RoutePage()` annotation)
-- Type-safe navigation with generated route classes
-- Note: auto_route doesn't natively support declarative popup pages as overlays
-- This example demonstrates using imperative popups alongside auto_route's routing
-
-## Popup Types Demonstrated
-
-- **DialogPage** - Material Design dialogs
-- **ModalBottomSheetPage** - Bottom sheets with drag handle
-- **CupertinoDialogPage** - iOS-style dialogs
-
-All popups support returning results to the calling page.
+```bash
+flutter test integration_test -d macos
+```

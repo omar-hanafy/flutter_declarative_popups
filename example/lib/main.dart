@@ -15,9 +15,6 @@
 ///    - Excellent support for path-based popup routes
 ///    - Each popup has its own URL path
 ///
-/// 4. **auto_route** - Code generation based routing
-///    - Type-safe navigation but limited popup support
-///    - Uses imperative popups alongside page routing
 library;
 
 import 'package:flutter/material.dart';
@@ -71,11 +68,11 @@ class _RoutingSelectorScreenState extends State<RoutingSelectorScreen> {
   Widget _buildExample() {
     switch (_selectedRouting) {
       case RoutingType.navigator2:
-        return Navigator2Example();
+        return const Navigator2Example();
       case RoutingType.navigator1:
         return const Navigator1Example();
       case RoutingType.goRouter:
-        return GoRouterExample();
+        return const GoRouterExample();
     }
   }
 
@@ -132,25 +129,21 @@ class _RoutingSelectorScreenState extends State<RoutingSelectorScreen> {
                 Text(
                   _selectedRouting.title,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _selectedRouting.description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
-                      ),
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: _buildExample(),
-          ),
+          Expanded(child: _buildExample()),
         ],
       ),
     );

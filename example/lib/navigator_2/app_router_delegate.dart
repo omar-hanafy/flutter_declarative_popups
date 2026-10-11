@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_declarative_popups/flutter_declarative_popups.dart';
+
 import '../shared/popup_demo_widget.dart';
 import 'navigator_2_example.dart';
 
@@ -21,7 +23,7 @@ class AppRoutePath {
   AppRoutePath.bottomSheet() : route = AppRoute.bottomSheet;
   AppRoutePath.cupertinoDialog() : route = AppRoute.cupertinoDialog;
   AppRoutePath.cupertinoScrollableSheet()
-      : route = AppRoute.cupertinoScrollableSheet;
+    : route = AppRoute.cupertinoScrollableSheet;
 }
 
 class AppRouterDelegate extends RouterDelegate<AppRoutePath>
@@ -30,67 +32,35 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
   final GlobalKey<NavigatorState> navigatorKey;
 
   AppRoute _currentRoute = AppRoute.home;
-  Completer<String?> dialogCompleter = Completer();
-  Completer<String?> bottomSheetCompleter = Completer();
-  Completer<String?> cupertinoDialogCompleter = Completer();
-  Completer<String?> cupertinoScrollableSheetCompleter = Completer();
-  String? _dialogResult;
-  String? _bottomSheetResult;
-  String? _cupertinoDialogResult;
-  String? _cupertinoScrollableSheetResult;
+  final Map<AppRoute, Completer<String?>> _pendingResults = {};
 
   AppRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
 
-  void _cacheDialogResult(String? result) {
-    _dialogResult = result;
+  void _completeResult(AppRoute route, String? result) {
+    _pendingResults.remove(route)?.complete(result);
   }
 
-  void _cacheBottomSheetResult(String? result) {
-    _bottomSheetResult = result;
-  }
-
-  void _cacheCupertinoDialogResult(String? result) {
-    _cupertinoDialogResult = result;
-  }
-
-  void _cacheCupertinoScrollableSheetResult(String? result) {
-    _cupertinoScrollableSheetResult = result;
-  }
-
-  void _resolveDialogResult() {
-    if (dialogCompleter.isCompleted) {
-      return;
+  Future<String?> _showPopup(AppRoute route) {
+    if (_currentRoute != route) {
+      _completeResult(_currentRoute, null);
     }
-    dialogCompleter.complete(_dialogResult);
-    _dialogResult = null;
-    dialogCompleter = Completer();
+    // Repeated requests for the visible popup share its pending result.
+    final completer = _pendingResults.putIfAbsent(
+      route,
+      Completer<String?>.new,
+    );
+    _currentRoute = route;
+    notifyListeners();
+    return completer.future;
   }
 
-  void _resolveBottomSheetResult() {
-    if (bottomSheetCompleter.isCompleted) {
-      return;
+  @override
+  void dispose() {
+    for (final completer in _pendingResults.values) {
+      completer.complete(null);
     }
-    bottomSheetCompleter.complete(_bottomSheetResult);
-    _bottomSheetResult = null;
-    bottomSheetCompleter = Completer();
-  }
-
-  void _resolveCupertinoDialogResult() {
-    if (cupertinoDialogCompleter.isCompleted) {
-      return;
-    }
-    cupertinoDialogCompleter.complete(_cupertinoDialogResult);
-    _cupertinoDialogResult = null;
-    cupertinoDialogCompleter = Completer();
-  }
-
-  void _resolveCupertinoScrollableSheetResult() {
-    if (cupertinoScrollableSheetCompleter.isCompleted) {
-      return;
-    }
-    cupertinoScrollableSheetCompleter.complete(_cupertinoScrollableSheetResult);
-    _cupertinoScrollableSheetResult = null;
-    cupertinoScrollableSheetCompleter = Completer();
+    _pendingResults.clear();
+    super.dispose();
   }
 
   @override
@@ -124,7 +94,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
             builder: (context) => const SampleDialog(),
             onPopInvoked: (didPop, result) {
               if (didPop) {
-                _cacheDialogResult(result);
+                _completeResult(AppRoute.dialog, result);
               }
             },
           ),
@@ -135,7 +105,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
             showDragHandle: true,
             onPopInvoked: (didPop, result) {
               if (didPop) {
-                _cacheBottomSheetResult(result);
+                _completeResult(AppRoute.bottomSheet, result);
               }
             },
           ),
@@ -145,7 +115,7 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
             builder: (context) => const SampleCupertinoDialog(),
             onPopInvoked: (didPop, result) {
               if (didPop) {
-                _cacheCupertinoDialogResult(result);
+                _completeResult(AppRoute.cupertinoDialog, result);
               }
             },
           ),
@@ -154,58 +124,48 @@ class AppRouterDelegate extends RouterDelegate<AppRoutePath>
             key: const ValueKey('cupertino-scrollable-sheet'),
             scrollableBuilder: (context, scrollController) =>
                 CupertinoScrollableSheetBody(
-                    scrollController: scrollController),
+                  scrollController: scrollController,
+                ),
             backgroundColor: CupertinoColors.systemGroupedBackground,
             onPopInvoked: (didPop, result) {
               if (didPop) {
-                _cacheCupertinoScrollableSheetResult(result);
+                _completeResult(AppRoute.cupertinoScrollableSheet, result);
               }
             },
           ),
       ],
       onDidRemovePage: (page) {
-        if (page.key == const ValueKey('dialog')) {
-          _resolveDialogResult();
-        } else if (page.key == const ValueKey('bottom-sheet')) {
-          _resolveBottomSheetResult();
-        } else if (page.key == const ValueKey('cupertino-dialog')) {
-          _resolveCupertinoDialogResult();
-        } else if (page.key == const ValueKey('cupertino-scrollable-sheet')) {
-          _resolveCupertinoScrollableSheetResult();
+        final removedRoute = switch (page.key) {
+          ValueKey(value: 'dialog') => AppRoute.dialog,
+          ValueKey(value: 'bottom-sheet') => AppRoute.bottomSheet,
+          ValueKey(value: 'cupertino-dialog') => AppRoute.cupertinoDialog,
+          ValueKey(value: 'cupertino-scrollable-sheet') =>
+            AppRoute.cupertinoScrollableSheet,
+          _ => AppRoute.home,
+        };
+        if (removedRoute == _currentRoute) {
+          _currentRoute = AppRoute.home;
+          notifyListeners();
         }
-        _currentRoute = AppRoute.home;
-        notifyListeners();
       },
     );
   }
 
   @override
   Future<void> setNewRoutePath(AppRoutePath configuration) async {
+    if (_currentRoute != configuration.route) {
+      _completeResult(_currentRoute, null);
+    }
     _currentRoute = configuration.route;
     notifyListeners();
   }
 
-  void showDialog() {
-    _dialogResult = null;
-    _currentRoute = AppRoute.dialog;
-    notifyListeners();
-  }
+  Future<String?> showDialog() => _showPopup(AppRoute.dialog);
 
-  void showBottomSheet() {
-    _bottomSheetResult = null;
-    _currentRoute = AppRoute.bottomSheet;
-    notifyListeners();
-  }
+  Future<String?> showBottomSheet() => _showPopup(AppRoute.bottomSheet);
 
-  void showCupertinoDialog() {
-    _cupertinoDialogResult = null;
-    _currentRoute = AppRoute.cupertinoDialog;
-    notifyListeners();
-  }
+  Future<String?> showCupertinoDialog() => _showPopup(AppRoute.cupertinoDialog);
 
-  void showCupertinoScrollableSheet() {
-    _cupertinoScrollableSheetResult = null;
-    _currentRoute = AppRoute.cupertinoScrollableSheet;
-    notifyListeners();
-  }
+  Future<String?> showCupertinoScrollableSheet() =>
+      _showPopup(AppRoute.cupertinoScrollableSheet);
 }

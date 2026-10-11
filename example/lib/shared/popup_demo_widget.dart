@@ -27,10 +27,7 @@ class PopupDemoSection extends StatelessWidget {
                   Icon(icon, size: 24),
                   const SizedBox(width: 12),
                 ],
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+                Text(title, style: Theme.of(context).textTheme.titleLarge),
               ],
             ),
             const SizedBox(height: 12),
@@ -123,10 +120,7 @@ class SampleBottomSheet extends StatelessWidget {
         children: [
           const Text(
             'Sample Bottom Sheet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -199,8 +193,9 @@ class CupertinoScrollableSheetBody extends StatelessWidget {
         slivers: [
           SliverAppBar(
             pinned: true,
-            backgroundColor:
-                CupertinoColors.systemBackground.resolveFrom(context),
+            backgroundColor: CupertinoColors.systemBackground.resolveFrom(
+              context,
+            ),
             foregroundColor: CupertinoColors.label.resolveFrom(context),
             title: const Text('Scrollable Sheet'),
             actions: [
@@ -211,19 +206,16 @@ class CupertinoScrollableSheetBody extends StatelessWidget {
             ],
           ),
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return CupertinoListTile(
-                  title: Text('Item ${index + 1}'),
-                  subtitle: const Text(
-                    'Drag the top of the list down to dismiss.',
-                  ),
-                  onTap: () =>
-                      Navigator.of(context).pop('Picked item ${index + 1}'),
-                );
-              },
-              childCount: 50,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              return CupertinoListTile(
+                title: Text('Item ${index + 1}'),
+                subtitle: const Text(
+                  'Drag the top of the list down to dismiss.',
+                ),
+                onTap: () =>
+                    Navigator.of(context).pop('Picked item ${index + 1}'),
+              );
+            }, childCount: 50),
           ),
         ],
       ),

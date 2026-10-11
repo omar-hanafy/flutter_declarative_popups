@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_declarative_popups/src/utils/page_route.dart';
 
 /// A declarative page-based modal bottom sheet that can be used with Navigator 2.0.
 ///
@@ -218,6 +219,8 @@ class ModalBottomSheetPage<T> extends Page<T> {
   /// swiping downwards.
   ///
   /// This applies to the content below the drag handle, if showDragHandle is true.
+  /// [Page.canPop] and [PopScope] also block drag dismissal, including the
+  /// handle and a [DraggableScrollableSheet] reaching its minimum extent.
   ///
   /// Defaults is true.
   final bool enableDrag;
@@ -230,6 +233,8 @@ class ModalBottomSheetPage<T> extends Page<T> {
   ///
   /// If null, then the value of [BottomSheetThemeData.showDragHandle] is used.
   /// If that is also null, defaults to false.
+  /// The handle is hidden while [Page.canPop] or [PopScope] blocks dismissal,
+  /// because the SDK gives the handle its own dismissal gestures and action.
   final bool? showDragHandle;
 
   /// The max height constraint ratio for the bottom sheet
@@ -246,6 +251,10 @@ class ModalBottomSheetPage<T> extends Page<T> {
   /// The BottomSheet widget will manipulate the position of this animation, it
   /// is not just a passive observer. It's up to the owner of the controller to
   /// call [AnimationController.dispose] when the controller is no longer needed.
+  ///
+  /// Changing the controller identity replaces the route and its content state,
+  /// even when the page key is unchanged. Its lifecycle is owned by the SDK
+  /// route and cannot be changed on an existing route.
   final AnimationController? transitionAnimationController;
 
   /// Used to override the modal bottom sheet animation duration and reverse
@@ -258,6 +267,10 @@ class ModalBottomSheetPage<T> extends Page<T> {
   /// override the modal bottom sheet reverse animation duration.
   ///
   /// To disable the modal bottom sheet animation, use [AnimationStyle.noAnimation].
+  ///
+  /// Duration changes update an existing route when it owns its controller.
+  /// Changing [AnimationStyle.curve] or [AnimationStyle.reverseCurve] replaces
+  /// the route and its content state, because the SDK caches those curves.
   final AnimationStyle? sheetAnimationStyle;
 
   /// Whether to avoid system intrusions on the top, left, and right.
@@ -312,83 +325,142 @@ class ModalBottomSheetPage<T> extends Page<T> {
 
   @override
   Route<T> createRoute(BuildContext context) {
-    return _CustomModalBottomSheetRoute<T>(
-      builder: builder,
-      settings: this,
-      isScrollControlled: isScrollControlled,
-      backgroundColor: backgroundColor,
-      elevation: elevation,
-      shape: shape,
-      clipBehavior: clipBehavior,
-      barrierLabel: barrierLabel,
-      barrierOnTapHint: barrierOnTapHint,
-      capturedThemes: capturedThemes,
-      modalBarrierColor: modalBarrierColor,
-      isDismissible: isDismissible,
-      enableDrag: enableDrag,
-      showDragHandle: showDragHandle,
-      scrollControlDisabledMaxHeightRatio:
-          maxHeightRatio ?? _defaultScrollControlDisabledMaxHeightRatio,
-      transitionAnimationController: transitionAnimationController,
-      anchorPoint: anchorPoint,
-      useSafeArea: useSafeArea,
-      sheetAnimationStyle: sheetAnimationStyle,
-      constraints: constraints,
-      requestFocus: requestFocus,
-      onBarrierTap: onBarrierTap,
-    );
+    return _ModalBottomSheetRoute<T>(page: this, context: context);
+  }
+
+  @override
+  bool canUpdate(Page<dynamic> other) {
+    if (!super.canUpdate(other)) {
+      return false;
+    }
+    final previous = other as ModalBottomSheetPage<T>;
+    // The SDK owns its animation controller and caches its animation curves.
+    // These lifecycle settings require a new route; content and other options
+    // can update without discarding the existing sheet's state.
+    return identical(
+          transitionAnimationController,
+          previous.transitionAnimationController,
+        ) &&
+        sheetAnimationStyle?.curve == previous.sheetAnimationStyle?.curve &&
+        sheetAnimationStyle?.reverseCurve ==
+            previous.sheetAnimationStyle?.reverseCurve;
   }
 }
 
-// The default max height ratio when scroll control is disabled
+// The default max height ratio when scroll control is disabled.
 const double _defaultScrollControlDisabledMaxHeightRatio = 9.0 / 16.0;
 
-class _CustomModalBottomSheetRoute<T> extends ModalBottomSheetRoute<T> {
-  _CustomModalBottomSheetRoute({
-    required super.builder,
-    required super.isScrollControlled,
-    super.capturedThemes,
-    super.barrierLabel,
-    super.barrierOnTapHint,
-    super.backgroundColor,
-    super.elevation,
-    super.shape,
-    super.clipBehavior,
-    super.constraints,
-    super.modalBarrierColor,
-    super.isDismissible,
-    super.enableDrag,
-    super.showDragHandle,
-    super.scrollControlDisabledMaxHeightRatio,
-    super.settings,
-    super.transitionAnimationController,
-    super.anchorPoint,
-    super.useSafeArea,
-    super.sheetAnimationStyle,
-    super.requestFocus,
-    this.onBarrierTap,
-  });
+class _ModalBottomSheetRoute<T> extends ModalBottomSheetRoute<T>
+    with PopupPageRoute<T, ModalBottomSheetPage<T>>, PopupDismissalGuard<T> {
+  _ModalBottomSheetRoute({
+    required ModalBottomSheetPage<T> page,
+    required BuildContext context,
+  }) : _defaultBarrierLabel = MaterialLocalizations.of(context).scrimLabel,
+       _defaultBarrierOnTapHint = MaterialLocalizations.of(context)
+           .scrimOnTapHint(MaterialLocalizations.of(context).bottomSheetLabel),
+       _defaultBarrierColor = Theme.of(context)
+           .bottomSheetTheme
+           .modalBarrierColor,
+       super(
+         settings: page,
+         builder: page.builder,
+         isScrollControlled: page.isScrollControlled,
+         transitionAnimationController: page.transitionAnimationController,
+       );
 
-  /// Custom callback when the barrier is tapped.
-  final VoidCallback? onBarrierTap;
+  final String _defaultBarrierLabel;
+  final String _defaultBarrierOnTapHint;
+  final Color? _defaultBarrierColor;
+
+  @override
+  WidgetBuilder get builder => _buildContent;
+
+  Widget _buildContent(BuildContext context) =>
+      NotificationListener<DraggableScrollableNotification>(
+        // The SDK's extent listener calls Navigator.pop directly. Consume its
+        // close signal while the route's declarative pop policy forbids it.
+        onNotification: (notification) =>
+            !userDismissalAllowed &&
+            notification.extent == notification.minExtent &&
+            notification.shouldCloseOnMinExtent,
+        child: preserveContent(Builder(builder: page.builder)),
+      );
+
+  @override
+  CapturedThemes? get capturedThemes => page.capturedThemes;
+
+  @override
+  String get barrierLabel => page.barrierLabel ?? _defaultBarrierLabel;
+
+  @override
+  String get barrierOnTapHint =>
+      page.barrierOnTapHint ?? _defaultBarrierOnTapHint;
+
+  @override
+  Color? get backgroundColor => page.backgroundColor;
+
+  @override
+  double? get elevation => page.elevation;
+
+  @override
+  ShapeBorder? get shape => page.shape;
+
+  @override
+  Clip? get clipBehavior => page.clipBehavior;
+
+  @override
+  BoxConstraints? get constraints => page.constraints;
+
+  @override
+  Color? get modalBarrierColor =>
+      page.modalBarrierColor ?? _defaultBarrierColor;
+
+  @override
+  bool get isDismissible => page.isDismissible;
+
+  @override
+  bool get enableDrag => page.enableDrag && userDismissalAllowed;
+
+  @override
+  bool? get showDragHandle =>
+      userDismissalAllowed ? page.showDragHandle : false;
+
+  @override
+  bool get isScrollControlled => page.isScrollControlled;
+
+  @override
+  double get scrollControlDisabledMaxHeightRatio =>
+      page.maxHeightRatio ?? _defaultScrollControlDisabledMaxHeightRatio;
+
+  @override
+  Offset? get anchorPoint => page.anchorPoint;
+
+  @override
+  bool get useSafeArea => page.useSafeArea;
+
+  @override
+  AnimationStyle? get sheetAnimationStyle => page.sheetAnimationStyle;
+
+  @override
+  bool get requestFocus => page.requestFocus ?? super.requestFocus;
+
+  @override
+  bool get synchronizeAnimationDurations =>
+      transitionAnimationController == null;
 
   @override
   Widget buildModalBarrier() {
-    // Get the base modal barrier from parent
-    final baseBarrier = super.buildModalBarrier();
-
-    // If we have a custom onBarrierTap and the barrier is dismissible,
-    // wrap it to intercept taps
-    if (onBarrierTap != null && barrierDismissible) {
-      return GestureDetector(
-        onTap: () {
-          onBarrierTap!();
-        },
-        behavior: HitTestBehavior.opaque,
-        child: baseBarrier,
-      );
+    final barrier = super.buildModalBarrier();
+    if (page.onBarrierTap == null || !barrierDismissible) {
+      return barrier;
     }
-
-    return baseBarrier;
+    return customizeModalBarrier(
+      barrier,
+      onDismiss: () {
+        if (isCurrent) {
+          page.onBarrierTap!();
+        }
+      },
+    );
   }
 }

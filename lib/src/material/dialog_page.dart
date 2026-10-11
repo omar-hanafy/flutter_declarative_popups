@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_declarative_popups/src/utils/page_route.dart';
 
 /// A page that displays a dialog when pushed onto the Navigator.
 ///
@@ -38,6 +39,7 @@ class DialogPage<T> extends Page<T> {
     this.traversalEdgeBehavior,
     this.animationStyle,
     this.requestFocus,
+    this.fullscreenDialog = false,
     super.key,
     super.name,
     super.arguments,
@@ -61,6 +63,7 @@ class DialogPage<T> extends Page<T> {
     TraversalEdgeBehavior? traversalEdgeBehavior,
     AnimationStyle? animationStyle,
     bool? requestFocus,
+    bool fullscreenDialog = false,
     bool canPop = true,
     PopInvokedWithResultCallback<T>? onPopInvoked,
     LocalKey? key,
@@ -83,6 +86,7 @@ class DialogPage<T> extends Page<T> {
       traversalEdgeBehavior: traversalEdgeBehavior,
       animationStyle: animationStyle,
       requestFocus: requestFocus,
+      fullscreenDialog: fullscreenDialog,
       canPop: canPop,
       onPopInvoked: onPopInvoked ?? (bool didPop, T? result) {},
       key: key,
@@ -98,8 +102,10 @@ class DialogPage<T> extends Page<T> {
   /// {@macro flutter.widgets.DisplayFeatureSubScreen.anchorPoint}
   final Offset? anchorPoint;
 
-  /// The color to use for the modal barrier. If this is null, the barrier will
-  /// be transparent.
+  /// The color to use for the modal barrier.
+  ///
+  /// Defaults to the dialog theme's barrier color, then [Colors.black54]. Use
+  /// [Colors.transparent] for a transparent barrier.
   final Color? barrierColor;
 
   /// Whether you can dismiss this dialog by tapping the modal barrier.
@@ -115,6 +121,10 @@ class DialogPage<T> extends Page<T> {
   final CapturedThemes? themes;
 
   /// Controls the transfer of focus beyond the first and the last items of the dialog.
+  ///
+  /// Defaults to [TraversalEdgeBehavior.closedLoop]. Changing the effective
+  /// policy replaces the route and its content state, because the SDK's
+  /// existing focus scope retains the policy it was initialized with.
   final TraversalEdgeBehavior? traversalEdgeBehavior;
 
   /// Configures the animation for the dialog.
@@ -123,46 +133,104 @@ class DialogPage<T> extends Page<T> {
   /// Whether the route should request focus when opened.
   final bool? requestFocus;
 
+  /// Whether this route represents a full-screen dialog.
+  final bool fullscreenDialog;
+
   @override
   Route<T> createRoute(BuildContext context) {
-    // If no barrier label is provided, use the default from Material localizations
-    final effectiveBarrierLabel =
-        barrierLabel ??
-        (barrierDismissible
-            ? MaterialLocalizations.of(context).modalBarrierDismissLabel
-            : null);
-
-    return _DialogRoute<T>(
-      context: context,
-      builder: builder,
-      themes: themes,
-      barrierColor: barrierColor ?? Colors.black54,
-      barrierDismissible: barrierDismissible,
-      barrierLabel: effectiveBarrierLabel,
-      useSafeArea: useSafeArea,
-      settings: this,
-      anchorPoint: anchorPoint,
-      traversalEdgeBehavior: traversalEdgeBehavior,
-      animationStyle: animationStyle,
-      requestFocus: requestFocus,
-    );
+    return _DialogRoute<T>(page: this, context: context);
   }
+
+  @override
+  bool canUpdate(Page<dynamic> other) =>
+      super.canUpdate(other) &&
+      (traversalEdgeBehavior ?? TraversalEdgeBehavior.closedLoop) ==
+          ((other as DialogPage<T>).traversalEdgeBehavior ??
+              TraversalEdgeBehavior.closedLoop);
 }
 
 /// Internal dialog route used by DialogPage
-class _DialogRoute<T> extends DialogRoute<T> {
-  _DialogRoute({
-    required super.context,
-    required super.builder,
-    super.themes,
-    super.barrierColor,
-    super.barrierDismissible,
-    super.barrierLabel,
-    super.useSafeArea,
-    super.settings,
-    super.anchorPoint,
-    super.traversalEdgeBehavior,
-    super.animationStyle,
-    super.requestFocus,
-  });
+class _DialogRoute<T> extends DialogRoute<T>
+    with PopupPageRoute<T, DialogPage<T>> {
+  _DialogRoute({required DialogPage<T> page, required super.context})
+    : _defaultBarrierColor =
+          DialogTheme.of(context).barrierColor ??
+          Theme.of(context).dialogTheme.barrierColor ??
+          Colors.black54,
+      _defaultBarrierLabel = MaterialLocalizations.of(context)
+          .modalBarrierDismissLabel,
+      super(
+        settings: page,
+        useSafeArea: false,
+        builder: (context) =>
+            (ModalRoute.of(context)! as _DialogRoute<T>)._buildContent(context),
+      );
+
+  final Color _defaultBarrierColor;
+  final String _defaultBarrierLabel;
+  CurvedAnimation? _fadeAnimation;
+
+  Widget _buildContent(BuildContext context) {
+    Widget content = preserveContent(Builder(builder: page.builder));
+    content = page.themes?.wrap(content) ?? content;
+    return page.useSafeArea ? SafeArea(child: content) : content;
+  }
+
+  @override
+  Color get barrierColor => page.barrierColor ?? _defaultBarrierColor;
+
+  @override
+  bool get barrierDismissible => page.barrierDismissible;
+
+  @override
+  String get barrierLabel => page.barrierLabel ?? _defaultBarrierLabel;
+
+  @override
+  Offset? get anchorPoint => page.anchorPoint;
+
+  @override
+  TraversalEdgeBehavior get traversalEdgeBehavior =>
+      page.traversalEdgeBehavior ?? TraversalEdgeBehavior.closedLoop;
+
+  @override
+  bool get requestFocus => page.requestFocus ?? super.requestFocus;
+
+  @override
+  bool get fullscreenDialog => page.fullscreenDialog;
+
+  @override
+  Duration get transitionDuration =>
+      page.animationStyle?.duration ?? const Duration(milliseconds: 150);
+
+  @override
+  Duration get reverseTransitionDuration =>
+      page.animationStyle?.reverseDuration ?? transitionDuration;
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curve = page.animationStyle?.curve ?? Curves.easeOut;
+    final reverseCurve = page.animationStyle?.reverseCurve ?? Curves.easeOut;
+    if (_fadeAnimation?.parent != animation ||
+        _fadeAnimation?.curve != curve ||
+        _fadeAnimation?.reverseCurve != reverseCurve) {
+      _fadeAnimation?.dispose();
+      _fadeAnimation = CurvedAnimation(
+        parent: animation,
+        curve: curve,
+        reverseCurve: reverseCurve,
+      );
+    }
+    return FadeTransition(opacity: _fadeAnimation!, child: child);
+  }
+
+  @override
+  void dispose() {
+    _fadeAnimation?.dispose();
+    super.dispose();
+  }
 }
