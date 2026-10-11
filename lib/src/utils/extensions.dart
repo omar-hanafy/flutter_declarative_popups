@@ -99,6 +99,9 @@ extension DeclarativePopupNavigation on NavigatorState {
     TraversalEdgeBehavior? traversalEdgeBehavior,
     AnimationStyle? animationStyle,
     bool? requestFocus,
+    bool fullscreenDialog = false,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     final page = DialogPage<T>(
@@ -116,6 +119,9 @@ extension DeclarativePopupNavigation on NavigatorState {
       traversalEdgeBehavior: traversalEdgeBehavior,
       animationStyle: animationStyle,
       requestFocus: requestFocus,
+      fullscreenDialog: fullscreenDialog,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
 
@@ -172,6 +178,8 @@ extension DeclarativePopupNavigation on NavigatorState {
     BoxConstraints? constraints,
     bool? requestFocus,
     VoidCallback? onBarrierTap,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     final page = ModalBottomSheetPage<T>(
@@ -208,6 +216,8 @@ extension DeclarativePopupNavigation on NavigatorState {
       constraints: constraints,
       requestFocus: requestFocus,
       onBarrierTap: onBarrierTap,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
 
@@ -226,6 +236,7 @@ extension DeclarativePopupNavigation on NavigatorState {
   ///   pageBuilder: (context, animation, secondaryAnimation) {
   ///     return MyCustomDialog();
   ///   },
+  ///   barrierLabel: 'Dismiss',
   /// );
   /// ```
   Future<T?> showRawDialog<T>({
@@ -239,6 +250,9 @@ extension DeclarativePopupNavigation on NavigatorState {
     TraversalEdgeBehavior? traversalEdgeBehavior,
     TraversalEdgeBehavior? directionalTraversalEdgeBehavior,
     bool? requestFocus,
+    bool fullscreenDialog = false,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     final page = RawDialogPage<T>(
@@ -252,6 +266,9 @@ extension DeclarativePopupNavigation on NavigatorState {
       traversalEdgeBehavior: traversalEdgeBehavior,
       directionalTraversalEdgeBehavior: directionalTraversalEdgeBehavior,
       requestFocus: requestFocus,
+      fullscreenDialog: fullscreenDialog,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
 
@@ -287,6 +304,8 @@ extension DeclarativePopupNavigation on NavigatorState {
     bool? requestFocus,
     VoidCallback? onBarrierTap,
     String? barrierOnTapHint,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     final page = CupertinoModalPopupPage<T>(
@@ -300,6 +319,8 @@ extension DeclarativePopupNavigation on NavigatorState {
       requestFocus: requestFocus,
       onBarrierTap: onBarrierTap,
       barrierOnTapHint: barrierOnTapHint,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
 
@@ -342,6 +363,8 @@ extension DeclarativePopupNavigation on NavigatorState {
     Offset? anchorPoint,
     VoidCallback? onBarrierTap,
     String? barrierOnTapHint,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     final page = CupertinoDialogPage<T>(
@@ -355,6 +378,8 @@ extension DeclarativePopupNavigation on NavigatorState {
       anchorPoint: anchorPoint,
       onBarrierTap: onBarrierTap,
       barrierOnTapHint: barrierOnTapHint,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
 
@@ -404,6 +429,8 @@ extension DeclarativePopupNavigation on NavigatorState {
     LocalKey? key,
     String? name,
     Object? arguments,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     assert(
@@ -428,6 +455,8 @@ extension DeclarativePopupNavigation on NavigatorState {
       key: key,
       name: name,
       arguments: arguments,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
 
@@ -454,9 +483,12 @@ extension DeclarativePopupBuilders on BuildContext {
     TraversalEdgeBehavior? traversalEdgeBehavior,
     AnimationStyle? animationStyle,
     bool? requestFocus,
+    bool fullscreenDialog = false,
     LocalKey? key,
     String? name,
     Object? arguments,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     return DialogPage<T>(
@@ -474,9 +506,12 @@ extension DeclarativePopupBuilders on BuildContext {
       traversalEdgeBehavior: traversalEdgeBehavior,
       animationStyle: animationStyle,
       requestFocus: requestFocus,
+      fullscreenDialog: fullscreenDialog,
       key: key,
       name: name,
       arguments: arguments,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
   }
@@ -509,6 +544,8 @@ extension DeclarativePopupBuilders on BuildContext {
     LocalKey? key,
     String? name,
     Object? arguments,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     return ModalBottomSheetPage<T>(
@@ -520,9 +557,8 @@ extension DeclarativePopupBuilders on BuildContext {
       barrierLabel: barrierLabel ?? MaterialLocalizations.of(this).scrimLabel,
       barrierOnTapHint:
           barrierOnTapHint ??
-          MaterialLocalizations.of(
-            this,
-          ).scrimOnTapHint(MaterialLocalizations.of(this).bottomSheetLabel),
+          MaterialLocalizations.of(this)
+              .scrimOnTapHint(MaterialLocalizations.of(this).bottomSheetLabel),
       capturedThemes:
           capturedThemes ??
           InheritedTheme.capture(from: this, to: Navigator.of(this).context),
@@ -544,6 +580,8 @@ extension DeclarativePopupBuilders on BuildContext {
       key: key,
       name: name,
       arguments: arguments,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
   }
@@ -565,6 +603,8 @@ extension DeclarativePopupBuilders on BuildContext {
     LocalKey? key,
     String? name,
     Object? arguments,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     return CupertinoDialogPage<T>(
@@ -581,6 +621,8 @@ extension DeclarativePopupBuilders on BuildContext {
       key: key,
       name: name,
       arguments: arguments,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
   }
@@ -602,6 +644,8 @@ extension DeclarativePopupBuilders on BuildContext {
     LocalKey? key,
     String? name,
     Object? arguments,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     return CupertinoModalPopupPage<T>(
@@ -618,6 +662,8 @@ extension DeclarativePopupBuilders on BuildContext {
       key: key,
       name: name,
       arguments: arguments,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
   }
@@ -642,6 +688,8 @@ extension DeclarativePopupBuilders on BuildContext {
     LocalKey? key,
     String? name,
     Object? arguments,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     assert(
@@ -666,6 +714,8 @@ extension DeclarativePopupBuilders on BuildContext {
       key: key,
       name: name,
       arguments: arguments,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
   }
@@ -684,9 +734,12 @@ extension DeclarativePopupBuilders on BuildContext {
     TraversalEdgeBehavior? traversalEdgeBehavior,
     TraversalEdgeBehavior? directionalTraversalEdgeBehavior,
     bool? requestFocus,
+    bool fullscreenDialog = false,
     LocalKey? key,
     String? name,
     Object? arguments,
+    bool canPop = true,
+    PopInvokedWithResultCallback<T> onPopInvoked = _defaultOnPopInvoked,
     String? restorationId,
   }) {
     return RawDialogPage<T>(
@@ -700,10 +753,15 @@ extension DeclarativePopupBuilders on BuildContext {
       traversalEdgeBehavior: traversalEdgeBehavior,
       directionalTraversalEdgeBehavior: directionalTraversalEdgeBehavior,
       requestFocus: requestFocus,
+      fullscreenDialog: fullscreenDialog,
       key: key,
       name: name,
       arguments: arguments,
+      canPop: canPop,
+      onPopInvoked: onPopInvoked,
       restorationId: restorationId,
     );
   }
 }
+
+void _defaultOnPopInvoked(bool didPop, Object? result) {}

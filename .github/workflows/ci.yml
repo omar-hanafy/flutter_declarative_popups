@@ -14,41 +14,52 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Flutter (stable)
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
 
       - name: Version channel check
-        if: github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'dev')
-        run: |
-          if git diff --name-only "origin/${{ github.base_ref }}"...HEAD | grep -q '^pubspec.yaml$'; then
-            version=$(awk '/^version:/ {print $2}' pubspec.yaml)
-            if [[ "${{ github.base_ref }}" == "main" ]]; then
-              if [[ "$version" == *-* ]]; then
-                echo "Main requires a stable version (no pre-release suffix)."
-                exit 1
-              fi
-            else
-              if [[ "$version" != *-* ]]; then
-                echo "Dev requires a pre-release version suffix (e.g. -dev.1)."
-                exit 1
-              fi
-            fi
-          else
-            echo "pubspec.yaml not changed; skipping version channel check."
-          fi
+        if: github.base_ref == 'main' || github.base_ref == 'dev' || github.ref_name == 'main' || github.ref_name == 'dev'
+        env:
+          RELEASE_LANE: ${{ github.base_ref || github.ref_name }}
+        run: bash scripts/check-version-lane.sh "$RELEASE_LANE"
 
       - name: Install dependencies
         run: |
-          dart pub get
+          flutter pub get
 
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  test-minimum:
+    name: Test on minimum Flutter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter (minimum)
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: '3.47.7'
+
+      - name: Resolve lowest supported dependencies
+        run: |
+          flutter pub downgrade
 
       - name: Analyze
         run: flutter analyze
@@ -62,16 +73,18 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter (beta)
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: beta
 
       - name: Install dependencies
         run: |
-          dart pub get
+          flutter pub get
 
       - name: Analyze
         run: flutter analyze
@@ -84,32 +97,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter (stable)
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
 
       - name: Install dependencies
-        run: dart pub get
+        run: flutter pub get
 
       - name: Install pana
-        run: dart pub global activate pana
+        run: dart pub global activate pana 0.23.19
 
       - name: Run pana
-        run: |
-          pana --json > pana.json
-          python3 - <<'PY'
-          import json
-          with open('pana.json') as f:
-            data = json.load(f)
-          scores = data.get('scores', {})
-          granted = scores.get('grantedPoints', 0)
-          max_points = scores.get('maxPoints', 0)
-          if max_points == 0:
-            raise SystemExit('pana did not report scores; failing.')
-          if granted != max_points:
-            raise SystemExit(f'pana score {granted}/{max_points} (full score required).')
-          print(f'pana score {granted}/{max_points}')
-          PY
+        run: dart pub global run pana --exit-code-threshold 0 .

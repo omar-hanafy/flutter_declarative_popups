@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_declarative_popups/src/utils/page_route.dart';
 
 /// A page-based implementation of [RawDialogRoute] that can be used with
 /// Navigator 2.0 and declarative routing.
@@ -42,11 +43,17 @@ import 'package:flutter/material.dart';
 ///
 /// ## State Restoration
 ///
-/// To enable state restoration for dialogs, provide a [restorationId]:
+/// Provide a [restorationId] to make the page's route restorable. The app and
+/// [Navigator] also need restoration scopes, and the owner of the `pages` list
+/// must restore the state that includes this page. A page's restoration ID
+/// alone does not reconstruct the list after the app is restarted.
+///
+/// A page in the restored list can use:
 ///
 /// ```dart
 /// RawDialogPage<void>(
 ///   restorationId: 'my_dialog',
+///   barrierLabel: 'Dismiss',
 ///   pageBuilder: (context, animation, secondaryAnimation) {
 ///     return MyDialogWidget();
 ///   },
@@ -79,6 +86,7 @@ class RawDialogPage<T> extends Page<T> {
     this.traversalEdgeBehavior,
     this.directionalTraversalEdgeBehavior,
     this.requestFocus,
+    this.fullscreenDialog = false,
     super.key,
     super.name,
     super.arguments,
@@ -113,8 +121,8 @@ class RawDialogPage<T> extends Page<T> {
 
   /// The color to use for the modal barrier.
   ///
-  /// If this is null, the barrier will be transparent. The default is
-  /// a semi-transparent black (Color(0x80000000)).
+  /// Defaults to a semi-transparent black (Color(0x80000000)). Use
+  /// [Colors.transparent] for a transparent barrier.
   ///
   /// The color is animated from transparent to the specified color when
   /// the dialog is shown, and back to transparent when dismissed.
@@ -156,12 +164,16 @@ class RawDialogPage<T> extends Page<T> {
   /// Controls focus traversal behavior at the route boundary.
   ///
   /// If null, uses the Navigator's routeTraversalEdgeBehavior.
+  /// Changing this policy replaces the route and its content state so that
+  /// the SDK initializes a new focus scope with the requested policy.
   final TraversalEdgeBehavior? traversalEdgeBehavior;
 
   /// Controls directional focus traversal behavior at the route boundary.
   ///
   /// If null, uses the Navigator's
   /// routeDirectionalTraversalEdgeBehavior.
+  /// Changing this policy replaces the route and its content state so that
+  /// the SDK initializes a new focus scope with the requested policy.
   final TraversalEdgeBehavior? directionalTraversalEdgeBehavior;
 
   /// Whether the route should request focus when shown.
@@ -169,26 +181,23 @@ class RawDialogPage<T> extends Page<T> {
   /// If null, uses the Navigator's default behavior.
   final bool? requestFocus;
 
+  /// Whether this route represents a full-screen dialog.
+  final bool fullscreenDialog;
+
   @override
   Route<T> createRoute(BuildContext context) {
-    return RawDialogRoute<T>(
-      pageBuilder: pageBuilder,
-      barrierDismissible: barrierDismissible,
-      barrierColor: barrierColor ?? const Color(0x80000000),
-      barrierLabel: barrierLabel,
-      transitionDuration: transitionDuration,
-      transitionBuilder: transitionBuilder,
-      settings: this,
-      anchorPoint: anchorPoint,
-      traversalEdgeBehavior: traversalEdgeBehavior,
-      directionalTraversalEdgeBehavior: directionalTraversalEdgeBehavior,
-      requestFocus: requestFocus,
-    );
+    return _RawDialogRoute<T>(page: this);
   }
 
   @override
   bool canUpdate(Page<dynamic> other) {
-    return other.runtimeType == runtimeType && other.key == key;
+    if (!super.canUpdate(other)) {
+      return false;
+    }
+    final previous = other as RawDialogPage<T>;
+    return traversalEdgeBehavior == previous.traversalEdgeBehavior &&
+        directionalTraversalEdgeBehavior ==
+            previous.directionalTraversalEdgeBehavior;
   }
 
   @override
@@ -199,5 +208,72 @@ class RawDialogPage<T> extends Page<T> {
         'restorationId: $restorationId, '
         'barrierDismissible: $barrierDismissible'
         ')';
+  }
+}
+
+class _RawDialogRoute<T> extends RawDialogRoute<T>
+    with PopupPageRoute<T, RawDialogPage<T>> {
+  _RawDialogRoute({required RawDialogPage<T> page})
+    : super(settings: page, pageBuilder: page.pageBuilder);
+
+  @override
+  bool get barrierDismissible => page.barrierDismissible;
+
+  @override
+  Color get barrierColor => page.barrierColor ?? const Color(0x80000000);
+
+  @override
+  String? get barrierLabel => page.barrierLabel;
+
+  @override
+  Duration get transitionDuration => page.transitionDuration;
+
+  @override
+  Offset? get anchorPoint => page.anchorPoint;
+
+  @override
+  TraversalEdgeBehavior? get traversalEdgeBehavior =>
+      page.traversalEdgeBehavior;
+
+  @override
+  TraversalEdgeBehavior? get directionalTraversalEdgeBehavior =>
+      page.directionalTraversalEdgeBehavior;
+
+  @override
+  bool get requestFocus => page.requestFocus ?? super.requestFocus;
+
+  @override
+  bool get fullscreenDialog => page.fullscreenDialog;
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return Semantics(
+      scopesRoute: true,
+      explicitChildNodes: true,
+      child: DisplayFeatureSubScreen(
+        anchorPoint: anchorPoint,
+        child: page.pageBuilder(context, animation, secondaryAnimation),
+      ),
+    );
+  }
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return page.transitionBuilder?.call(
+          context,
+          animation,
+          secondaryAnimation,
+          child,
+        ) ??
+        FadeTransition(opacity: animation, child: child);
   }
 }

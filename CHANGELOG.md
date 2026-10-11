@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.0.0] - 2026-10-11
+
+### Breaking changes
+
+- Raised the minimum SDK requirements to Flutter 3.47.7 and Dart 3.13.5.
+- Rebuilding a popup page with the same type and key now updates its content and supported route options while preserving its route and widget state. Use a new key to intentionally replace the popup.
+
+### Additions
+
+- Added `fullscreenDialog` support to Material and raw dialog pages and their extension helpers.
+- Added `canPop` and `onPopInvoked` passthroughs to navigation and page-builder extension helpers.
+
+### Fixes
+
+- Fixed custom Material bottom-sheet barrier callbacks so they replace automatic dismissal.
+- Fixed Cupertino barriers with custom accessibility hints bypassing pop guards.
+- Fixed Material and Cupertino sheet drag dismissal ignoring `Page.canPop` or `PopScope`, including Material drag handles and scroll-to-dismiss signals.
+- Fixed nested Cupertino sheets retaining stale content and scroll controllers after page updates.
+- Updated Material barrier defaults to follow the dialog and bottom-sheet themes, and resolved Cupertino barrier colors for dark mode.
+- Fixed custom Cupertino dialog transition durations being ignored by Flutter's native spring animation.
+- Fixed example routing lifecycle and result handling, and updated the example to go_router 18.
+- Migrated the example's native projects to the current Flutter setup, including iOS 15, macOS 12, and iOS scene lifecycle support.
+- Updated migration examples to use `onDidRemovePage` and typed `onPopInvoked` callbacks, and clarified restoration and nested-sheet navigation requirements.
+
 ## [1.0.0] - 2026-05-20
 
 First stable release. The Cupertino sheet implementation has been

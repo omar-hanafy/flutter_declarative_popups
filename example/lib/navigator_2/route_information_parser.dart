@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
 import 'app_router_delegate.dart';
 
 class AppRouteInformationParser extends RouteInformationParser<AppRoutePath> {
   @override
   Future<AppRoutePath> parseRouteInformation(
-      RouteInformation routeInformation) async {
+    RouteInformation routeInformation,
+  ) async {
     final uri = routeInformation.uri;
 
     // Handle the various paths

@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_declarative_popups/src/utils/cupertino_color.dart';
+import 'package:flutter_declarative_popups/src/utils/page_route.dart';
 
 /// A page that creates a Cupertino-style dialog route.
 ///
@@ -94,6 +96,8 @@ class CupertinoDialogPage<T> extends Page<T> {
   ///
   /// If this is null, the barrier will use the default iOS modal barrier color
   /// resolved from [kCupertinoModalBarrierColor] using [CupertinoDynamicColor.resolve].
+  /// Custom dynamic Cupertino colors honor the opening context's local theme
+  /// and the navigator's ambient brightness, contrast, and interface level.
   final Color? barrierColor;
 
   /// The semantic label used for the modal barrier if it is dismissible.
@@ -104,8 +108,9 @@ class CupertinoDialogPage<T> extends Page<T> {
 
   /// The duration of the transition animation.
   ///
-  /// This transition duration was eyeballed comparing with iOS.
-  /// Defaults to 250 milliseconds.
+  /// The default 250 milliseconds uses Flutter's native spring transition,
+  /// whose actual settling time is determined by the spring. A custom value
+  /// uses a timed transition of that duration; [Duration.zero] disables it.
   final Duration transitionDuration;
 
   /// Custom transition builder for the dialog animation.
@@ -115,7 +120,7 @@ class CupertinoDialogPage<T> extends Page<T> {
 
   /// Whether the route should request focus when pushed.
   ///
-  /// {@macro flutter.widgets.navigator.requestFocus}
+  /// If null, the route uses [Navigator.requestFocus].
   final bool? requestFocus;
 
   /// {@macro flutter.widgets.DisplayFeatureSubScreen.anchorPoint}
@@ -139,115 +144,124 @@ class CupertinoDialogPage<T> extends Page<T> {
 
   @override
   Route<T> createRoute(BuildContext context) {
-    // If custom barrier handling is provided, use our custom route
-    if (onBarrierTap != null || barrierOnTapHint != null) {
-      return _CustomCupertinoDialogRoute<T>(
-        builder: builder,
-        context: context,
-        settings: this,
-        barrierDismissible: barrierDismissible,
-        barrierColor: barrierColor,
-        barrierLabel: barrierLabel,
-        transitionDuration: transitionDuration,
-        transitionBuilder: transitionBuilder,
-        requestFocus: requestFocus,
-        anchorPoint: anchorPoint,
-        onBarrierTap: onBarrierTap,
-        barrierOnTapHint: barrierOnTapHint,
-      );
-    }
-
-    // Otherwise use the standard route
-    return CupertinoDialogRoute<T>(
-      builder: builder,
-      context: context,
-      settings: this,
-      barrierDismissible: barrierDismissible,
-      barrierColor: barrierColor,
-      barrierLabel: barrierLabel,
-      transitionDuration: transitionDuration,
-      transitionBuilder: transitionBuilder,
-      requestFocus: requestFocus,
-      anchorPoint: anchorPoint,
-    );
+    return _CupertinoDialogRoute<T>(page: this, context: context);
   }
 }
 
-/// Custom [CupertinoDialogRoute] that supports additional barrier customization.
-class _CustomCupertinoDialogRoute<T> extends CupertinoDialogRoute<T> {
-  _CustomCupertinoDialogRoute({
-    required super.builder,
+class _CupertinoDialogRoute<T> extends CupertinoDialogRoute<T>
+    with PopupPageRoute<T, CupertinoDialogPage<T>> {
+  _CupertinoDialogRoute({
+    required CupertinoDialogPage<T> page,
     required super.context,
-    super.barrierDismissible,
-    super.barrierColor,
-    super.barrierLabel,
-    super.transitionDuration,
-    super.transitionBuilder,
-    super.settings,
-    super.requestFocus,
-    super.anchorPoint,
-    this.onBarrierTap,
-    this.barrierOnTapHint,
-  });
+  }) : _colorResolver = CupertinoPopupColorResolver(context),
+       _defaultBarrierLabel = CupertinoLocalizations.of(context)
+           .modalBarrierDismissLabel,
+       super(
+         settings: page,
+         builder: (context) {
+           final page =
+               ModalRoute.settingsOf(context)! as CupertinoDialogPage<T>;
+           return page.builder(context);
+         },
+       );
 
-  /// Custom callback when the barrier is tapped.
-  final VoidCallback? onBarrierTap;
+  final CupertinoPopupColorResolver _colorResolver;
+  final String _defaultBarrierLabel;
 
-  /// Custom semantic hint for the barrier tap action.
-  final String? barrierOnTapHint;
+  @override
+  bool get barrierDismissible => page.barrierDismissible;
 
-  /// Clip details notifier for the modal barrier.
-  final ValueNotifier<EdgeInsets> _clipDetailsNotifier =
-      ValueNotifier<EdgeInsets>(EdgeInsets.zero);
+  @override
+  Color get barrierColor =>
+      _colorResolver.resolve(page.barrierColor ?? kCupertinoModalBarrierColor)!;
+
+  @override
+  String get barrierLabel => page.barrierLabel ?? _defaultBarrierLabel;
+
+  @override
+  Duration get transitionDuration => page.transitionDuration;
+
+  @override
+  Simulation createSimulation({required bool forward}) {
+    if (transitionDuration == const Duration(milliseconds: 250)) {
+      return super.createSimulation(forward: forward);
+    }
+    return _TimedDialogSimulation(
+      begin: controller!.value,
+      end: forward ? 1 : 0,
+      duration: transitionDuration,
+    );
+  }
+
+  @override
+  Offset? get anchorPoint => page.anchorPoint;
+
+  @override
+  bool get requestFocus => page.requestFocus ?? super.requestFocus;
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return page.transitionBuilder?.call(
+          context,
+          animation,
+          secondaryAnimation,
+          child,
+        ) ??
+        super.buildTransitions(context, animation, secondaryAnimation, child);
+  }
 
   @override
   Widget buildModalBarrier() {
-    if (barrierColor != null && barrierColor!.a != 0 && !offstage) {
-      assert(
-        barrierColor != barrierColor!.withValues(alpha: 0),
-        'The barrierColor must not be fully transparent when building the modal barrier.',
-      );
-
-      final color = animation!.drive(
-        ColorTween(
-          begin: barrierColor!.withValues(alpha: 0),
-          end: barrierColor,
-        ).chain(CurveTween(curve: barrierCurve)),
-      );
-
-      return AnimatedModalBarrier(
-        color: color,
-        dismissible: barrierDismissible,
-        semanticsLabel: barrierLabel,
-        barrierSemanticsDismissible: semanticsDismissible,
-        clipDetailsNotifier: _clipDetailsNotifier,
-        semanticsOnTapHint: barrierOnTapHint,
-        onDismiss: barrierDismissible ? _handleBarrierTap : null,
-      );
-    } else {
-      return ModalBarrier(
-        color: barrierColor,
-        dismissible: barrierDismissible,
-        semanticsLabel: barrierLabel,
-        barrierSemanticsDismissible: semanticsDismissible,
-        clipDetailsNotifier: _clipDetailsNotifier,
-        semanticsOnTapHint: barrierOnTapHint,
-        onDismiss: barrierDismissible ? _handleBarrierTap : null,
-      );
+    final barrier = super.buildModalBarrier();
+    if (page.onBarrierTap == null && page.barrierOnTapHint == null) {
+      return barrier;
     }
+    return customizeModalBarrier(
+      barrier,
+      onDismiss: _handleBarrierTap,
+      semanticsOnTapHint: page.barrierOnTapHint,
+    );
   }
 
   void _handleBarrierTap() {
-    if (onBarrierTap != null) {
-      onBarrierTap!();
-    } else if (isCurrent) {
-      navigator?.pop();
+    if (!isCurrent) {
+      return;
+    }
+    if (page.onBarrierTap != null) {
+      page.onBarrierTap!();
+    } else {
+      navigator?.maybePop();
     }
   }
+}
+
+// CupertinoDialogRoute requires a non-null simulation, while its native
+// spring ignores transitionDuration. This preserves custom duration values.
+class _TimedDialogSimulation extends Simulation {
+  _TimedDialogSimulation({
+    required this.begin,
+    required this.end,
+    required Duration duration,
+  }) : duration = duration.inMicroseconds / Duration.microsecondsPerSecond;
+
+  final double begin;
+  final double end;
+  final double duration;
 
   @override
-  void dispose() {
-    _clipDetailsNotifier.dispose();
-    super.dispose();
-  }
+  double x(double time) => duration == 0
+      ? end
+      : begin + (end - begin) * (time / duration).clamp(0, 1);
+
+  @override
+  double dx(double time) =>
+      duration == 0 || isDone(time) ? 0 : (end - begin) / duration;
+
+  @override
+  bool isDone(double time) => time >= duration;
 }

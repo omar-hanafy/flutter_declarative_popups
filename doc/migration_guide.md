@@ -1,627 +1,215 @@
-# Migration Guide: From Imperative to Declarative Popups
+# Migrating to declarative popups
 
-This guide helps you migrate from Flutter's imperative popup APIs to declarative alternatives provided by `flutter_declarative_popups`.
+Version 2.0.0 requires Flutter 3.47.7 and Dart 3.13.5 or newer.
 
-## Table of Contents
-- [Why Migrate?](#why-migrate)
-- [Material Design Migrations](#material-design-migrations)
-- [Cupertino (iOS) Migrations](#cupertino-ios-migrations)
-- [Advanced Patterns](#advanced-patterns)
-- [Best Practices](#best-practices)
+Popup pages belong in `Navigator.pages` or a router's page builder. The application
+owns the page list; a popup's dismissal must remove its page from that list.
 
-## Why Migrate?
+## Choose a page
 
-### Benefits of Declarative Popups
+| Imperative API | Declarative page |
+| --- | --- |
+| `showDialog` | `DialogPage<T>` |
+| `showModalBottomSheet` | `ModalBottomSheetPage<T>` |
+| `showCupertinoDialog` | `CupertinoDialogPage<T>` |
+| `showCupertinoModalPopup` | `CupertinoModalPopupPage<T>` |
+| `showCupertinoSheet` | `CupertinoSheetPage<T>` |
+| `showGeneralDialog` | `RawDialogPage<T>` |
 
-1. **Navigator 2.0 Compatibility**: Full support for declarative navigation
-2. **State Management**: Popups become part of your app's navigation state
-3. **Deep Linking**: Popups can be part of deep link URLs
-4. **State Restoration**: Automatic state restoration for popups
-5. **Type Safety**: Better type safety with page-based navigation
-6. **Testing**: Easier to test with predictable navigation state
-
-### When to Use Declarative Popups
-
-- When using Navigator 2.0 or go_router
-- When popups are part of your navigation flow
-- When you need state restoration
-- When deep linking to popups
-- When testing complex navigation scenarios
-
-## Material Design Migrations
-
-### showDialog → DialogPage
-
-#### Before (Imperative)
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () async {
-        final result = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: Text('Confirm'),
-            content: Text('Are you sure?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('OK'),
-              ),
-            ],
-          ),
-        );
-        
-        if (result == true) {
-          // Handle confirmation
-        }
-      },
-      child: Text('Show Dialog'),
-    );
-  }
-}
-```
-
-#### After (Declarative)
-```dart
-class MyWidget extends StatefulWidget {
-  @override
-  State<MyWidget> createState() => _MyWidgetState();
-}
-
-class _MyWidgetState extends State<MyWidget> {
-  bool _showConfirmDialog = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      pages: [
-        MaterialPage(
-          child: ElevatedButton(
-            onPressed: () => setState(() => _showConfirmDialog = true),
-            child: Text('Show Dialog'),
-          ),
-        ),
-        if (_showConfirmDialog)
-          DialogPage<bool>(
-            barrierDismissible: false,
-            builder: (context) => AlertDialog(
-              title: Text('Confirm'),
-              content: Text('Are you sure?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text('OK'),
-                ),
-              ],
-            ),
-          ),
-      ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) return false;
-        
-        setState(() => _showConfirmDialog = false);
-        
-        if (result == true) {
-          // Handle confirmation
-        }
-        
-        return true;
-      },
-    );
-  }
-}
-```
-
-### showModalBottomSheet → ModalBottomSheetPage
-
-#### Before (Imperative)
-```dart
-void _showOptions(BuildContext context) async {
-  final option = await showModalBottomSheet<String>(
-    context: context,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) => Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.share),
-            title: Text('Share'),
-            onTap: () => Navigator.pop(context, 'share'),
-          ),
-          ListTile(
-            leading: Icon(Icons.edit),
-            title: Text('Edit'),
-            onTap: () => Navigator.pop(context, 'edit'),
-          ),
-          ListTile(
-            leading: Icon(Icons.delete),
-            title: Text('Delete'),
-            onTap: () => Navigator.pop(context, 'delete'),
-          ),
-        ],
-      ),
-    ),
-  );
-  
-  switch (option) {
-    case 'share':
-      // Handle share
-      break;
-    case 'edit':
-      // Handle edit
-      break;
-    case 'delete':
-      // Handle delete
-      break;
-  }
-}
-```
-
-#### After (Declarative)
-```dart
-enum BottomSheetAction { none, options }
-
-class MyScreen extends StatefulWidget {
-  @override
-  State<MyScreen> createState() => _MyScreenState();
-}
-
-class _MyScreenState extends State<MyScreen> {
-  BottomSheetAction _currentSheet = BottomSheetAction.none;
-
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      pages: [
-        MaterialPage(
-          child: Scaffold(
-            body: Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() => _currentSheet = BottomSheetAction.options);
-                },
-                child: Text('Show Options'),
-              ),
-            ),
-          ),
-        ),
-        if (_currentSheet == BottomSheetAction.options)
-          ModalBottomSheetPage<String>(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (context) => Container(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.share),
-                    title: Text('Share'),
-                    onTap: () => Navigator.pop(context, 'share'),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.edit),
-                    title: Text('Edit'),
-                    onTap: () => Navigator.pop(context, 'edit'),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.delete),
-                    title: Text('Delete'),
-                    onTap: () => Navigator.pop(context, 'delete'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) return false;
-        
-        setState(() => _currentSheet = BottomSheetAction.none);
-        
-        switch (result) {
-          case 'share':
-            // Handle share
-            break;
-          case 'edit':
-            // Handle edit
-            break;
-          case 'delete':
-            // Handle delete
-            break;
-        }
-        
-        return true;
-      },
-    );
-  }
-}
-```
-
-## Cupertino (iOS) Migrations
-
-### showCupertinoModalPopup → CupertinoModalPopupPage
-
-#### Before (Imperative)
-```dart
-void _showActionSheet(BuildContext context) {
-  showCupertinoModalPopup<String>(
-    context: context,
-    builder: (context) => CupertinoActionSheet(
-      title: Text('Select Photo'),
-      actions: [
-        CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context, 'camera'),
-          child: Text('Take Photo'),
-        ),
-        CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context, 'gallery'),
-          child: Text('Choose from Gallery'),
-        ),
-      ],
-      cancelButton: CupertinoActionSheetAction(
-        isDefaultAction: true,
-        onPressed: () => Navigator.pop(context),
-        child: Text('Cancel'),
-      ),
-    ),
-  ).then((value) {
-    if (value == 'camera') {
-      // Open camera
-    } else if (value == 'gallery') {
-      // Open gallery
-    }
-  });
-}
-```
-
-#### After (Declarative)
-```dart
-class PhotoSelector extends StatefulWidget {
-  @override
-  State<PhotoSelector> createState() => _PhotoSelectorState();
-}
-
-class _PhotoSelectorState extends State<PhotoSelector> {
-  bool _showPhotoOptions = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      pages: [
-        CupertinoPage(
-          child: CupertinoButton(
-            onPressed: () => setState(() => _showPhotoOptions = true),
-            child: Text('Select Photo'),
-          ),
-        ),
-        if (_showPhotoOptions)
-          CupertinoModalPopupPage<String>(
-            builder: (context) => CupertinoActionSheet(
-              title: Text('Select Photo'),
-              actions: [
-                CupertinoActionSheetAction(
-                  onPressed: () => Navigator.pop(context, 'camera'),
-                  child: Text('Take Photo'),
-                ),
-                CupertinoActionSheetAction(
-                  onPressed: () => Navigator.pop(context, 'gallery'),
-                  child: Text('Choose from Gallery'),
-                ),
-              ],
-              cancelButton: CupertinoActionSheetAction(
-                isDefaultAction: true,
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-            ),
-          ),
-      ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) return false;
-        
-        setState(() => _showPhotoOptions = false);
-        
-        if (result == 'camera') {
-          // Open camera
-        } else if (result == 'gallery') {
-          // Open gallery
-        }
-        
-        return true;
-      },
-    );
-  }
-}
-```
-
-## Advanced Patterns
-
-### With go_router
+For classic navigation, a page can also create a route:
 
 ```dart
-final router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => HomeScreen(),
-      routes: [
-        GoRoute(
-          path: 'confirm',
-          pageBuilder: (context, state) => DialogPage(
-            builder: (context) => ConfirmDialog(
-              message: state.queryParams['message'] ?? 'Are you sure?',
-            ),
-          ),
-        ),
-        GoRoute(
-          path: 'options',
-          pageBuilder: (context, state) => ModalBottomSheetPage(
-            builder: (context) => OptionsSheet(),
-          ),
-        ),
-      ],
-    ),
-  ],
+final result = await Navigator.of(context).push<bool>(
+  DialogPage<bool>(builder: (_) => const ConfirmDialog()).createRoute(context),
 );
-
-// Navigate to dialog
-context.go('/confirm?message=Delete%20this%20item?');
-
-// Navigate to bottom sheet
-context.go('/options');
+if (!context.mounted) return;
+// Use result or update the UI.
 ```
 
-### State Restoration
+The runnable examples live in [`example/lib`](../example/lib).
+
+## Migrate result handling and page removal
+
+Use `Page.onPopInvoked` for typed results and `Navigator.onDidRemovePage` to update
+the page list. `onDidRemovePage` does not receive a result. Keep these responsibilities
+independent instead of assuming the callbacks run in a particular order.
 
 ```dart
-class RestoredDialog extends StatefulWidget {
+class ConfirmScreen extends StatefulWidget {
+  const ConfirmScreen({super.key});
+
   @override
-  State<RestoredDialog> createState() => _RestoredDialogState();
+  State<ConfirmScreen> createState() => _ConfirmScreenState();
 }
 
-class _RestoredDialogState extends State<RestoredDialog> with RestorationMixin {
-  final RestorableBool _showDialog = RestorableBool(false);
-
-  @override
-  String? get restorationId => 'dialog_example';
-
-  @override
-  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
-    registerForRestoration(_showDialog, 'show_dialog');
-  }
+class _ConfirmScreenState extends State<ConfirmScreen> {
+  static const _dialogKey = ValueKey('confirm');
+  bool _showDialog = false;
+  String? _lastResult;
 
   @override
   Widget build(BuildContext context) {
     return Navigator(
-      pages: [
-        MaterialPage(child: MyContent()),
-        if (_showDialog.value)
-          DialogPage(
-            restorationId: 'my_dialog',
-            builder: (context) => MyDialog(),
+      pages: <Page<void>>[
+        MaterialPage<void>(
+          key: const ValueKey('home'),
+          child: Scaffold(
+            body: Column(
+              children: [
+                Text(_lastResult ?? 'No result'),
+                ElevatedButton(
+                  onPressed: () => setState(() => _showDialog = true),
+                  child: const Text('Open dialog'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_showDialog)
+          DialogPage<bool>(
+            key: _dialogKey,
+            onPopInvoked: (didPop, result) {
+              if (didPop && mounted) {
+                setState(() {
+                  _lastResult = result == true ? 'Confirmed' : 'Cancelled';
+                });
+              }
+            },
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Confirm action'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Confirm'),
+                ),
+              ],
+            ),
           ),
       ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) return false;
-        _showDialog.value = false;
-        return true;
+      onDidRemovePage: (page) {
+        if (page.key == _dialogKey && mounted) {
+          setState(() => _showDialog = false);
+        }
       },
     );
   }
-
-  @override
-  void dispose() {
-    _showDialog.dispose();
-    super.dispose();
-  }
 }
 ```
 
-## Best Practices
+Use the same pattern for bottom sheets and Cupertino popups. For example, a
+`ModalBottomSheetPage<String>` can return an action such as `'share'` through its
+`onPopInvoked` callback.
 
-### 1. Use Enums for Popup State
+## Block user dismissal
+
+Set `canPop: false` on the page, or wrap its content in `PopScope<T>` when the
+content owns the guard. `onPopInvoked` reports whether an attempted pop succeeded.
+For guarded programmatic dismissal, call `Navigator.maybePop`. An explicit
+`Navigator.pop` is a command to pop and does not consult those guards.
 
 ```dart
-enum ActivePopup {
-  none,
-  deleteConfirm,
-  shareOptions,
-  userProfile,
-}
-
-class MyApp extends StatefulWidget {
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  ActivePopup _activePopup = ActivePopup.none;
-
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      pages: [
-        MaterialPage(child: MainScreen()),
-        if (_activePopup == ActivePopup.deleteConfirm)
-          DialogPage(builder: (context) => DeleteConfirmDialog()),
-        if (_activePopup == ActivePopup.shareOptions)
-          ModalBottomSheetPage(builder: (context) => ShareSheet()),
-        if (_activePopup == ActivePopup.userProfile)
-          CupertinoSheetPage(builder: (context) => UserProfileSheet()),
-      ],
-      onPopPage: _handlePopPage,
-    );
-  }
-
-  bool _handlePopPage(Route<dynamic> route, dynamic result) {
-    if (!route.didPop(result)) return false;
-    setState(() => _activePopup = ActivePopup.none);
-    // Handle result based on route type
-    return true;
-  }
-}
+DialogPage<bool>(
+  key: const ValueKey('unsaved-changes'),
+  canPop: !hasUnsavedChanges,
+  onPopInvoked: (didPop, result) {
+    if (!didPop) {
+      // Explain why dismissal is blocked.
+    }
+  },
+  builder: (_) => const EditDialog(),
+)
 ```
 
-### 2. Create Reusable Popup Widgets
+Custom `onBarrierTap` callbacks replace the normal dismissal action. If the
+callback should close the popup, call `Navigator.maybePop` on its owning navigator.
+A non-dismissible barrier does not call the callback.
+
+## Update an existing popup
+
+Use a stable key to retain a route and its state. Rebuilding the page updates its
+builder and supported options from the new page configuration.
 
 ```dart
-class ConfirmActionDialog extends StatelessWidget {
-  final String title;
-  final String message;
-  final String confirmText;
-  final String cancelText;
+DialogPage<void>(
+  key: const ValueKey('status-dialog'),
+  barrierDismissible: !isSaving,
+  builder: (_) => StatusDialog(message: statusMessage),
+)
+```
 
-  const ConfirmActionDialog({
-    Key? key,
-    required this.title,
-    required this.message,
-    this.confirmText = 'Confirm',
-    this.cancelText = 'Cancel',
-  }) : super(key: key);
+Use a different key to intentionally replace the popup. Some lifecycle options
+are fixed by Flutter's route implementation; consult the page's API documentation
+for options that require replacement.
 
-  static DialogPage<bool> page({
-    required String title,
-    required String message,
-    String confirmText = 'Confirm',
-    String cancelText = 'Cancel',
-  }) {
-    return DialogPage<bool>(
-      builder: (context) => ConfirmActionDialog(
-        title: title,
-        message: message,
-        confirmText: confirmText,
-        cancelText: cancelText,
-      ),
-    );
-  }
+## go_router
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelText),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(confirmText),
-        ),
-      ],
-    );
-  }
-}
+Keep the router alive for the lifetime of its owning widget and dispose it when
+that widget is removed. Use the route state's page key for popup identity.
 
-// Usage
-if (_showDeleteConfirm)
-  ConfirmActionDialog.page(
-    title: 'Delete Item',
-    message: 'This action cannot be undone.',
-    confirmText: 'Delete',
+```dart
+GoRoute(
+  path: 'confirm',
+  pageBuilder: (context, state) => DialogPage<bool>(
+    key: state.pageKey,
+    builder: (_) => ConfirmDialog(
+      message: state.uri.queryParameters['message'] ?? 'Continue?',
+    ),
   ),
+)
 ```
 
-### 3. Handle Complex Navigation Flows
+Use `context.push<bool>('/confirm')` to await a result. Check `mounted` before
+updating a widget after the await. Use `go` when the intent is to replace the
+configured location instead of waiting for a popup result.
+
+## Cupertino scrollable sheets and nested navigation
+
+Pass Flutter's supplied controller to the primary scrollable so scrolling and
+dragging cooperate:
 
 ```dart
-class MultiStepFlow extends StatefulWidget {
-  @override
-  State<MultiStepFlow> createState() => _MultiStepFlowState();
-}
-
-class _MultiStepFlowState extends State<MultiStepFlow> {
-  final List<Page> _pages = [];
-
-  void _pushStep(Widget step) {
-    setState(() {
-      _pages.add(MaterialPage(child: step));
-    });
-  }
-
-  void _popStep() {
-    setState(() {
-      if (_pages.isNotEmpty) {
-        _pages.removeLast();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoSheetPage(
-      useNestedNavigation: true,
-      builder: (context) => Navigator(
-        pages: [
-          MaterialPage(child: Step1(onNext: () => _pushStep(Step2()))),
-          ..._pages,
-        ],
-        onPopPage: (route, result) {
-          if (!route.didPop(result)) return false;
-          _popStep();
-          return true;
-        },
-      ),
-    );
-  }
-}
-```
-
-### 4. Testing Declarative Popups
-
-```dart
-testWidgets('dialog flow test', (tester) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      home: Navigator(
-        pages: [
-          MaterialPage(child: HomeScreen()),
-          DialogPage(
-            builder: (context) => ConfirmDialog(),
-          ),
-        ],
-        onPopPage: (route, result) => route.didPop(result),
+CupertinoSheetPage<String>(
+  key: const ValueKey('options-sheet'),
+  scrollableBuilder: (context, controller) => CupertinoPageScaffold(
+    child: ListView.builder(
+      controller: controller,
+      itemCount: 20,
+      itemBuilder: (context, index) => CupertinoListTile(
+        title: Text('Option ${index + 1}'),
+        onTap: () => Navigator.of(context).pop('option-$index'),
       ),
     ),
-  );
-
-  // Dialog should be visible
-  expect(find.text('Confirm'), findsOneWidget);
-
-  // Interact with dialog
-  await tester.tap(find.text('OK'));
-  await tester.pumpAndSettle();
-
-  // Dialog should be dismissed
-  expect(find.text('Confirm'), findsNothing);
-});
+  ),
+)
 ```
 
-## Summary
+A sheet's native drag dismisses the navigator that owns its route. The
+`useNestedNavigation` option creates an inner navigator for content; a `pop` from
+that inner context addresses the inner navigator. To close the sheet from nested
+content, retain or explicitly select the navigator that owns the sheet. Flutter's
+root-sheet helper targets the root navigator and is appropriate only when the
+sheet is actually presented there.
 
-Migrating to declarative popups provides better integration with modern Flutter navigation patterns. While it requires a different mental model, the benefits in terms of state management, testing, and deep linking make it worthwhile for apps using Navigator 2.0 or similar declarative navigation systems.
+## State restoration
 
-Key points to remember:
-- Popups become part of your navigation state
-- Use enums or similar patterns to track active popups
-- Handle results in `onPopPage` callback
-- Create reusable popup page widgets
-- Test popups as part of your navigation flow
+Restoration requires application state as well as route metadata:
+
+1. Configure `restorationScopeId` on the app and navigator.
+2. Assign `restorationId` to each page whose route state should be restored.
+3. Restore the state that determines the page list, using `RestorationMixin` or
+   the router's supported restoration mechanism.
+4. Register and dispose restorable properties in their owning widget.
+
+A popup page does not persist the page list by itself. Hot restart is not a test
+of process-death restoration; use Flutter's restoration testing tools.
+
+## Earlier versions
+
+For upgrades from 0.3.x, apply the 1.0.0 changes described in the
+[changelog](../CHANGELOG.md#100---2026-05-20), including `topGap` in place of
+`topGapRatio`, `Page.canPop` in place of `onWillPop`, and page-based Cupertino
+popups in place of the removed overlay widgets.

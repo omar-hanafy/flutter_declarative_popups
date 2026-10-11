@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_declarative_popups/flutter_declarative_popups.dart';
+
 import '../shared/popup_demo_widget.dart';
 import '../shared/result_display.dart';
 
@@ -54,7 +55,7 @@ class _GoRouterHomePageState extends State<GoRouterHomePage> {
   String? _lastResult;
 
   void _handleResult(String? result) {
-    if (result != null) {
+    if (mounted && result != null) {
       setState(() => _lastResult = result);
     }
   }
@@ -98,8 +99,9 @@ class _GoRouterHomePageState extends State<GoRouterHomePage> {
                 icon: Icons.apple,
                 description: 'Navigate to /cupertino-dialog',
                 onPressed: () async {
-                  final result =
-                      await context.push<String>('/cupertino-dialog');
+                  final result = await context.push<String>(
+                    '/cupertino-dialog',
+                  );
                   _handleResult(result);
                 },
               ),
@@ -113,7 +115,7 @@ class _GoRouterHomePageState extends State<GoRouterHomePage> {
               PopupDemoButton(
                 label: 'Push via Path',
                 icon: Icons.text_fields,
-                description: 'Using pushPath method',
+                description: 'Using context.push with a route path',
                 onPressed: () async {
                   final result = await context.push<String>('/dialog');
                   _handleResult(result);
@@ -137,16 +139,16 @@ class _GoRouterHomePageState extends State<GoRouterHomePage> {
                       const SizedBox(width: 8),
                       Text(
                         'go_router Implementation',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'go_router v15 - '
+                    'go_router - '
                     'Official Flutter routing package. Each popup is defined as a route with its own path. '
                     'Supports deep linking, browser history, and declarative navigation.',
                     style: Theme.of(context).textTheme.bodySmall,

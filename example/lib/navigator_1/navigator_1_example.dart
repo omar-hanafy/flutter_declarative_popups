@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_declarative_popups/flutter_declarative_popups.dart';
+
 import '../shared/popup_demo_widget.dart';
 import '../shared/result_display.dart';
 
@@ -23,7 +24,7 @@ class _Navigator1HomePageState extends State<Navigator1HomePage> {
   String? _lastResult;
 
   void _handleResult(String? result) {
-    if (result != null) {
+    if (mounted && result != null) {
       setState(() => _lastResult = result);
     }
   }
@@ -134,10 +135,10 @@ class _Navigator1HomePageState extends State<Navigator1HomePage> {
                       const SizedBox(width: 8),
                       Text(
                         'Navigator 1.0 Implementation',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                       ),
                     ],
                   ),

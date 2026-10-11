@@ -5,6 +5,8 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_declarative_popups/src/utils/cupertino_color.dart';
+import 'package:flutter_declarative_popups/src/utils/page_route.dart';
 
 /// A page that creates a Cupertino-style modal popup route.
 ///
@@ -101,6 +103,8 @@ class CupertinoModalPopupPage<T> extends Page<T> {
   /// color is animated when the route is pushed or popped.
   ///
   /// Defaults to [kCupertinoModalBarrierColor].
+  /// Dynamic Cupertino colors honor the opening context's local theme and
+  /// the navigator's ambient brightness, contrast, and interface level.
   final Color? barrierColor;
 
   /// Whether you can dismiss this route by tapping the modal barrier.
@@ -133,7 +137,7 @@ class CupertinoModalPopupPage<T> extends Page<T> {
 
   /// Whether the route should request focus when pushed.
   ///
-  /// {@macro flutter.widgets.navigator.requestFocus}
+  /// If null, the route uses [Navigator.requestFocus].
   final bool? requestFocus;
 
   /// Called when the barrier is tapped and [barrierDismissible] is true.
@@ -154,112 +158,65 @@ class CupertinoModalPopupPage<T> extends Page<T> {
 
   @override
   Route<T> createRoute(BuildContext context) {
-    // If custom barrier handling is provided, use our custom route
-    if (onBarrierTap != null || barrierOnTapHint != null) {
-      return _CustomCupertinoModalPopupRoute<T>(
-        builder: builder,
-        settings: this,
-        barrierLabel: barrierLabel,
-        barrierColor: barrierColor,
-        barrierDismissible: barrierDismissible,
-        semanticsDismissible: semanticsDismissible,
-        filter: filter,
-        anchorPoint: anchorPoint,
-        requestFocus: requestFocus,
-        onBarrierTap: onBarrierTap,
-        barrierOnTapHint: barrierOnTapHint,
-      );
-    }
-
-    // Otherwise use the standard route
-    return CupertinoModalPopupRoute<T>(
-      builder: builder,
-      settings: this,
-      barrierLabel: barrierLabel,
-      barrierColor: barrierColor,
-      barrierDismissible: barrierDismissible,
-      semanticsDismissible: semanticsDismissible,
-      filter: filter,
-      anchorPoint: anchorPoint,
-      requestFocus: requestFocus,
-    );
+    return _CupertinoModalPopupRoute<T>(page: this, context: context);
   }
 }
 
-/// Custom [CupertinoModalPopupRoute] that supports additional barrier customization.
-class _CustomCupertinoModalPopupRoute<T> extends CupertinoModalPopupRoute<T> {
-  _CustomCupertinoModalPopupRoute({
-    required super.builder,
-    required super.barrierLabel,
-    super.barrierColor,
-    super.barrierDismissible,
-    super.semanticsDismissible,
-    super.filter,
-    super.settings,
-    super.anchorPoint,
-    super.requestFocus,
-    this.onBarrierTap,
-    this.barrierOnTapHint,
-  });
+class _CupertinoModalPopupRoute<T> extends CupertinoModalPopupRoute<T>
+    with PopupPageRoute<T, CupertinoModalPopupPage<T>> {
+  _CupertinoModalPopupRoute({
+    required CupertinoModalPopupPage<T> page,
+    required BuildContext context,
+  }) : _colorResolver = CupertinoPopupColorResolver(context),
+       super(settings: page, builder: page.builder);
 
-  /// Custom callback when the barrier is tapped.
-  final VoidCallback? onBarrierTap;
+  final CupertinoPopupColorResolver _colorResolver;
 
-  /// Custom semantic hint for the barrier tap action.
-  final String? barrierOnTapHint;
+  @override
+  WidgetBuilder get builder => page.builder;
 
-  /// Clip details notifier for the modal barrier.
-  final ValueNotifier<EdgeInsets> _clipDetailsNotifier =
-      ValueNotifier<EdgeInsets>(EdgeInsets.zero);
+  @override
+  String get barrierLabel => page.barrierLabel;
+
+  @override
+  Color? get barrierColor => _colorResolver.resolve(page.barrierColor);
+
+  @override
+  bool get barrierDismissible => page.barrierDismissible;
+
+  @override
+  bool get semanticsDismissible => page.semanticsDismissible;
+
+  @override
+  ImageFilter? get filter => page.filter;
+
+  @override
+  Offset? get anchorPoint => page.anchorPoint;
+
+  @override
+  bool get requestFocus => page.requestFocus ?? super.requestFocus;
 
   @override
   Widget buildModalBarrier() {
-    if (barrierColor != null && barrierColor!.a != 0 && !offstage) {
-      assert(
-        barrierColor != barrierColor!.withValues(alpha: 0),
-        'The barrierColor must not be fully transparent when building the modal barrier.',
-      );
-
-      final color = animation!.drive(
-        ColorTween(
-          begin: barrierColor!.withValues(alpha: 0),
-          end: barrierColor,
-        ).chain(CurveTween(curve: barrierCurve)),
-      );
-
-      return AnimatedModalBarrier(
-        color: color,
-        dismissible: barrierDismissible,
-        semanticsLabel: barrierLabel,
-        barrierSemanticsDismissible: semanticsDismissible,
-        clipDetailsNotifier: _clipDetailsNotifier,
-        semanticsOnTapHint: barrierOnTapHint,
-        onDismiss: barrierDismissible ? _handleBarrierTap : null,
-      );
-    } else {
-      return ModalBarrier(
-        color: barrierColor,
-        dismissible: barrierDismissible,
-        semanticsLabel: barrierLabel,
-        barrierSemanticsDismissible: semanticsDismissible,
-        clipDetailsNotifier: _clipDetailsNotifier,
-        semanticsOnTapHint: barrierOnTapHint,
-        onDismiss: barrierDismissible ? _handleBarrierTap : null,
-      );
+    final barrier = super.buildModalBarrier();
+    if (page.onBarrierTap == null && page.barrierOnTapHint == null) {
+      return barrier;
     }
+    return customizeModalBarrier(
+      barrier,
+      onDismiss: _handleBarrierTap,
+      semanticsOnTapHint: page.barrierOnTapHint,
+    );
   }
 
   void _handleBarrierTap() {
-    if (onBarrierTap != null) {
-      onBarrierTap!();
-    } else if (isCurrent) {
-      navigator?.pop();
+    if (!isCurrent) {
+      return;
     }
-  }
-
-  @override
-  void dispose() {
-    _clipDetailsNotifier.dispose();
-    super.dispose();
+    if (page.onBarrierTap != null) {
+      page.onBarrierTap!();
+    } else {
+      navigator?.maybePop();
+    }
   }
 }
